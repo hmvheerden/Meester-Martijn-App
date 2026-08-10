@@ -16,7 +16,9 @@ export async function renderAIChat(root){
       <button id="recordChat" class="btn secondary">🎙️ Spraak</button>
       <span id="recordChatState"></span>
     </div>
-  </div>`;
+  </div>
+  <div class="home-shortcuts"><button id="openReflection" class="btn secondary small">💭 Open reflectie</button></div>`;
+  root.querySelector('#openReflection').onclick=()=>{ location.hash='reflection'; };
   const hist=root.querySelector('#aiChatHistory'),input=root.querySelector('#chatInput'),send=root.querySelector('#sendChat'),speech=root.querySelector('#chatSpeechState');
   function draw(){
     hist.innerHTML=history.length?history.map(m=>`<div class="bubble ${m.role==='user'?'user':'ai'}">${esc(m.content)}</div>`).join(''):`<div class="chat-empty"><strong>Waar kan ik mee helpen?</strong><div class="muted">Je kunt typen of een spraakbericht sturen.</div></div>`;

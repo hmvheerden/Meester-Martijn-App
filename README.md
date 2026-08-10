@@ -44,3 +44,9 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Menu blijft: Home, To Do, Notities, Mail, Klas.
 - Instellingen is bereikbaar via de knop rechtsboven op Home en Klas.
 - Klas bevat Groepjesmaker, Namenrad en Soundboards.
+
+## Versie 10
+- Kritieke syntaxfout in api.js gerepareerd.
+- Instellingen permanent rechtsboven.
+- Home opent Meesterassistent.
+- Menu: Home, To Do, Notities, Mail, Klas.
