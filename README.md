@@ -84,3 +84,12 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Alle punten in één keer op 0 zetten.
 - Puntenoverzicht kopiëren.
 - Puntenoverzicht direct mailen naar het e-mailadres uit Instellingen.
+
+## Versie 16
+- Groepjesmaker heeft nu naast automatisch ook Zelf indelen.
+- Bij Zelf indelen kies je 1 t/m 6 groepen, selecteer je een groep en tik je leerlingen uit de klassenlijst aan.
+- Een leerling kan maar in één handmatige groep tegelijk staan.
+- Nieuwe pagina Checklist onder Klas.
+- Checklist krijgt een eigen naam, gebruikt alle leerlingen, bewaart vinkjes en kan later verder worden ingevuld.
+- Checklist indienen toont welke leerlingen nog ontbreken.
+- Checklistoverzicht kan worden gekopieerd of naar het e-mailadres uit Instellingen worden gemaild.

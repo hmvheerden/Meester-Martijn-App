@@ -88,3 +88,14 @@
 .points-btn.plus{color:#30d158}
 .points-btn.minus{color:var(--danger)}
 .points-score{min-width:42px;text-align:center;font-size:24px;font-weight:850}
+
+.group-mode{grid-template-columns:repeat(2,1fr)}
+.manual-name-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.manual-name{border:1px solid var(--line);background:var(--card);color:var(--text);padding:12px;border-radius:13px;text-align:left;font-weight:700}
+.manual-name.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+.manual-name small{opacity:.75;font-weight:700}
+.checklist-names{display:flex;flex-direction:column;gap:8px}
+.check-student{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--card);font-weight:700}
+.check-student input{width:23px;height:23px;accent-color:var(--accent)}
+.check-student.done span{text-decoration:line-through;color:var(--muted)}
+@media(min-width:650px){.manual-name-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
