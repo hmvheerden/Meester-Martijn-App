@@ -1,35 +1,38 @@
-# Meester Martijn App — GitHub Pages versie
+# Meester Martijn App
 
-Deze versie heeft **geen mappen en geen Cloudflare Worker nodig**. Upload alle bestanden uit deze map rechtstreeks naar de hoofdmap van je GitHub-repository.
+GitHub Pages-versie. Upload alle bestanden uit deze map rechtstreeks naar de root van je GitHub-repository.
 
-## 1. Upload naar GitHub
+## Navigatie
+Onderin staan alleen Home, Klas, To Do en Instellingen. Alle functies zijn vanaf Home bereikbaar.
 
-Upload alle bestanden via **Add file → Upload files**. GitHub Pages gebruikt onder andere:
+## OpenAI
+Vul bij Instellingen je OpenAI API-key in. De key wordt lokaal op het apparaat opgeslagen en staat niet in GitHub. API-tegoed is apart van een ChatGPT-abonnement.
 
-- `index.html`
-- `style.css`
-- `manifest.json`
-- `service-worker.js`
-- alle `.js`-bestanden
-- `icon-192.png`
-- `icon-512.png`
+## Soundboards
+Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in IndexedDB opgeslagen.
 
-## 2. GitHub Pages aanzetten
 
-Ga in de repository naar **Settings → Pages**. Kies bij Source voor **Deploy from a branch**, selecteer `main` en `/ (root)`, en sla dit op.
+## Versie 5
+- Alle app-mails gaan standaard naar martijn.vanheerden@fedra.nl.
+- AI-mails bevatten geen ondertekening of slotgroet.
+- Notities kunnen worden ingesproken en automatisch kort samengevat.
+- Opgeslagen notities kunnen naar het vaste e-mailadres worden gemaild of als universeel .txt-bestand via het iOS-deelmenu worden gedeeld.
 
-## 3. OpenAI koppelen
+## Versie 6
+- Home opent direct AI Chat met tekst en spraak.
+- Onderste navigatie bevat alle pagina's en is horizontaal scrollbaar.
+- Alle mailfuncties gebruiken standaard martijn.vanheerden@fedra.nl.
+- Opgeslagen reflecties kunnen ook direct worden gemaild.
+- Soundboards blijven echte audiobestanden ondersteunen, inclusief MP3.
 
-Open de app en ga naar **Instellingen → AI**. Plak daar je OpenAI API-key en tik op **API-key opslaan**. Gebruik daarna **Verbinding testen**.
+## Versie 7
+- Home opent direct de AI-chat onder de naam Meesterassistent.
+- E-mailadres is weer volledig zelf instelbaar via Instellingen.
+- Mail, Notities en Reflectie gebruiken alleen het e-mailadres dat je zelf bij Instellingen hebt ingevuld.
+- Er staat geen vast e-mailadres meer in de code.
+- Alle pagina's blijven bereikbaar via de horizontaal scrollbare onderste navigatie.
 
-De key wordt alleen lokaal in de browseropslag op jouw apparaat opgeslagen. De key staat niet in de GitHub-bestanden en wordt ook niet meegenomen in de JSON-export van de app.
-
-Let op: client-side opslag van een API-key is minder veilig dan gebruik via een eigen backend. Gebruik deze versie alleen als je dat risico bewust accepteert en zet bij voorkeur een laag API-budget/gebruikslimiet op je OpenAI-account.
-
-## 4. Op iPhone installeren
-
-Open je GitHub Pages-adres in Safari, tik op de deelknop en kies **Zet op beginscherm**.
-
-## Functies
-
-De app bevat Mail opstellen, Notities, To Do, Groepjesmaker, Namenrad, Soundboards, Reflectie en Instellingen. Notities, klassenlijsten, reflecties, taken en soundboards worden waar mogelijk lokaal opgeslagen.
+## Versie 8
+- Onderste menu: Home, To Do, Notities, Mail, Klas.
+- Klas bevat Groepjesmaker, Namenrad en Soundboards.
+- Bestaande functies van Groepjesmaker, Namenrad en Soundboards blijven ongewijzigd.
