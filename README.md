@@ -93,3 +93,14 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Checklist krijgt een eigen naam, gebruikt alle leerlingen, bewaart vinkjes en kan later verder worden ingevuld.
 - Checklist indienen toont welke leerlingen nog ontbreken.
 - Checklistoverzicht kan worden gekopieerd of naar het e-mailadres uit Instellingen worden gemaild.
+
+## Versie 17
+- Home is nu een vrijwel schermvullende Meesterassistent-chat.
+- Alleen het gespreksgedeelte scrolt; de titel, invoer, verstuurknop en spraakknop blijven zichtbaar.
+- De rest van de app is inhoudelijk ongewijzigd gebleven.
+
+## Versie 18
+- Onderste hoofdmenu's: Home, To Do, Notities, Mail, Klas en Reflectie.
+- Onder Klas: Groepjesmaker, Namenrad, Checklist, Punten, Feedback, Timer, Beurten en Soundboards.
+- Instellingen blijft permanent rechtsboven.
+- Home blijft de schermvullende Meesterassistent-chat.

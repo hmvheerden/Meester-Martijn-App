@@ -6,8 +6,9 @@ let history=[];
 let recorder=null;
 
 export async function renderAIChat(root){
-  root.innerHTML=`<div class="topbar"><div><div class="title">Meesterassistent</div><div class="subtitle">Typ of spreek. AI-chat voor je schooldag. Typ of spreek; het gesprek blijft bewaard zolang de app open is.</div></div><button id="newChat" class="btn secondary small">Nieuwe chat</button></div>
-  <div class="card ai-chat-card">
+  root.classList.add('home-chat-page');
+  root.innerHTML=`<div class="topbar home-chat-topbar"><div><div class="title">Meesterassistent</div><div class="subtitle">Typ of spreek. Het gesprek blijft bewaard zolang de app open is.</div></div><button id="newChat" class="btn secondary small">Nieuwe chat</button></div>
+  <div class="card ai-chat-card fullscreen-chat-card">
     <div id="aiChatHistory" class="chat home-chat"></div>
     <div id="chatSpeechState" class="muted" style="margin-bottom:8px"></div>
     <textarea id="chatInput" class="textarea chat-input" placeholder="Typ je bericht..."></textarea>
@@ -16,9 +17,7 @@ export async function renderAIChat(root){
       <button id="recordChat" class="btn secondary">🎙️ Spraak</button>
       <span id="recordChatState"></span>
     </div>
-  </div>
-  <div class="home-shortcuts"><button id="openReflection" class="btn secondary small">💭 Open reflectie</button></div>`;
-  root.querySelector('#openReflection').onclick=()=>{ location.hash='reflection'; };
+  </div>`;
   const hist=root.querySelector('#aiChatHistory'),input=root.querySelector('#chatInput'),send=root.querySelector('#sendChat'),speech=root.querySelector('#chatSpeechState');
   function draw(){
     hist.innerHTML=history.length?history.map(m=>`<div class="bubble ${m.role==='user'?'user':'ai'}">${esc(m.content)}</div>`).join(''):`<div class="chat-empty"><strong>Waar kan ik mee helpen?</strong><div class="muted">Je kunt typen of een spraakbericht sturen.</div></div>`;

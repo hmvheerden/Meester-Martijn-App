@@ -99,3 +99,50 @@
 .check-student input{width:23px;height:23px;accent-color:var(--accent)}
 .check-student.done span{text-decoration:line-through;color:var(--muted)}
 @media(min-width:650px){.manual-name-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* v17: Home als vrijwel schermvullende chat */
+.home-chat-page{
+  height:calc(100dvh - 154px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height:560px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.home-chat-topbar{
+  flex:0 0 auto;
+  margin-bottom:10px;
+}
+.fullscreen-chat-card{
+  flex:1 1 auto;
+  min-height:0;
+  margin-bottom:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.fullscreen-chat-card .home-chat{
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding-right:2px;
+}
+.fullscreen-chat-card .chat-input{
+  flex:0 0 auto;
+  min-height:82px;
+  max-height:150px;
+}
+.fullscreen-chat-card > .row,
+.fullscreen-chat-card > #chatSpeechState{
+  flex:0 0 auto;
+}
+@media(max-height:700px){
+  .home-chat-page{
+    height:calc(100dvh - 138px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height:430px;
+  }
+  .home-chat-topbar .subtitle{display:none}
+  .fullscreen-chat-card .chat-input{min-height:64px}
+}
