@@ -36,3 +36,11 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Onderste menu: Home, To Do, Notities, Mail, Klas.
 - Klas bevat Groepjesmaker, Namenrad en Soundboards.
 - Bestaande functies van Groepjesmaker, Namenrad en Soundboards blijven ongewijzigd.
+
+## Versie 9 - blanco scherm reparatie
+- De app toont nu altijd eerst een zichtbare laadpagina.
+- Pagina-modules worden pas geladen wanneer nodig; één kapot/oud bestand kan niet meer de hele app blanco maken.
+- PWA-cache is vernieuwd en gebruikt network-first, zodat GitHub-updates sneller zichtbaar worden.
+- Menu blijft: Home, To Do, Notities, Mail, Klas.
+- Instellingen is bereikbaar via de knop rechtsboven op Home en Klas.
+- Klas bevat Groepjesmaker, Namenrad en Soundboards.
