@@ -50,3 +50,10 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Instellingen permanent rechtsboven.
 - Home opent Meesterassistent.
 - Menu: Home, To Do, Notities, Mail, Klas.
+
+## Versie 11
+- Soundboard: één tik start een geluid; nogmaals op hetzelfde geluid tikt stopt het direct.
+- Reflectie is weer een aparte hoofdpagina.
+- Reflectie heeft Lesreflectie en Dagreflectie.
+- Beide reflectietypen ondersteunen typen, inspreken, AI-samenvatting, opslaan, kopiëren en mailen.
+- Onderste navigatie bevat Home, To Do, Notities, Mail, Klas en Reflectie.

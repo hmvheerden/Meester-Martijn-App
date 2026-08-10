@@ -53,3 +53,23 @@
 .shell{padding-top:10px}
 
 .home-shortcuts{display:flex;justify-content:flex-end;margin-top:10px}
+
+/* v11: zes hoofdonderdelen onderin; horizontaal scrollbaar op smalle iPhones */
+.nav-inner{
+  max-width:760px;
+  margin:auto;
+  display:flex;
+  gap:3px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav-inner button{
+  flex:0 0 auto;
+  min-width:72px;
+  padding-left:7px;
+  padding-right:7px;
+}
+.reflection-mode{grid-template-columns:repeat(2,1fr)}

@@ -1,4 +1,4 @@
-const CACHE='meester-martijn-v10';
+const CACHE='meester-martijn-v11';
 const CORE=['./','./index.html','./style.css','./manifest.json','./app.js','./chat.js','./storage.js','./api.js','./utils.js','./recorder.js','./mail.js','./notes.js','./groups.js','./wheel.js','./todos.js','./soundboards.js','./reflection.js','./settings.js'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).catch(()=>{}));});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key!==CACHE)await caches.delete(key);await self.clients.claim();})());});

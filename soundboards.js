@@ -1,6 +1,6 @@
 import {getAll,put,del,settings} from './storage.js';
 import {uid,esc,toast} from './utils.js';
-let activeAudio=[];
+let activeAudio=new Map();
 const ACCEPT='.mp3,.m4a,.wav,.aac,.ogg,.oga,.webm,.mp4,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/aac,audio/ogg,audio/webm,audio/*';
 
 export async function renderSoundboards(root){
@@ -54,19 +54,54 @@ export async function renderSoundboards(root){
   }
 
   function mimeFromName(name=''){const ext=name.split('.').pop()?.toLowerCase();return ({mp3:'audio/mpeg',m4a:'audio/mp4',mp4:'audio/mp4',wav:'audio/wav',aac:'audio/aac',ogg:'audio/ogg',oga:'audio/ogg',webm:'audio/webm'})[ext]||'audio/mpeg'}
-  function stopAll(){activeAudio.forEach(a=>{try{a.pause();if(a._url)URL.revokeObjectURL(a._url)}catch{}});activeAudio=[]}
+  function stopSound(id){
+    const item=activeAudio.get(id);
+    if(!item)return false;
+    try{item.audio.pause();item.audio.currentTime=0}catch{}
+    try{URL.revokeObjectURL(item.url)}catch{}
+    item.btn?.classList.remove('playing');
+    activeAudio.delete(id);
+    return true;
+  }
+  function stopAll(){
+    for(const id of [...activeAudio.keys()])stopSound(id);
+  }
   function play(s,btn){
     if(!s)return;
+
+    // Tik je op een geluid dat al speelt, dan stopt het direct.
+    if(activeAudio.has(s.id)){
+      stopSound(s.id);
+      return;
+    }
+
     if(!settings.get('multiAudio',false))stopAll();
+
     try{
       let blob;
       if(s.data) blob=new Blob([s.data],{type:s.mimeType||mimeFromName(s.fileName)});
       else if(s.blob) blob=s.blob;
       else throw new Error('Geen audiogegevens gevonden');
-      const url=URL.createObjectURL(blob),a=new Audio();a.src=url;a.preload='auto';a._url=url;activeAudio.push(a);btn.classList.add('playing');
-      const cleanup=()=>{btn.classList.remove('playing');URL.revokeObjectURL(url);activeAudio=activeAudio.filter(x=>x!==a)};
-      a.onended=cleanup;a.onerror=()=>{cleanup();toast('Dit geluidsbestand kan Safari niet afspelen.')};
-      a.play().catch(e=>{cleanup();toast(`Afspelen lukt niet: ${e.message||'onbekende fout'}`)});
+
+      const url=URL.createObjectURL(blob);
+      const audio=new Audio();
+      audio.src=url;
+      audio.preload='auto';
+      activeAudio.set(s.id,{audio,url,btn});
+      btn.classList.add('playing');
+
+      const cleanup=()=>{
+        const current=activeAudio.get(s.id);
+        if(current?.audio===audio){
+          btn.classList.remove('playing');
+          activeAudio.delete(s.id);
+          try{URL.revokeObjectURL(url)}catch{}
+        }
+      };
+
+      audio.onended=cleanup;
+      audio.onerror=()=>{cleanup();toast('Dit geluidsbestand kan Safari niet afspelen.')};
+      audio.play().catch(e=>{cleanup();toast(`Afspelen lukt niet: ${e.message||'onbekende fout'}`)});
     }catch(e){toast(`Geluid kon niet worden geopend: ${e.message}`)}
   }
   await drawBoards();

@@ -50,7 +50,15 @@ export async function generalChat(messages){
   return {text:out};
 }
 
-export async function summarizeReflection(text){const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'system',content:'Vat een lesreflectie van een Nederlandse basisschoolleerkracht kort en praktisch samen. Gebruik precies deze kopjes: Wat ging goed:, Wat kan beter:, Volgende keer:. Houd ieder onderdeel kort en concreet. Geen inleiding.'},{role:'user',content:String(text||'')} ]})});const out=assistantText(data);if(!out)throw new Error('OpenAI gaf geen samenvatting terug.');return {text:out}}
+export async function summarizeReflection(text,mode='lesson'){
+  const system=mode==='day'
+    ? 'Vat een dagreflectie van een Nederlandse basisschoolleerkracht kort en praktisch samen. Gebruik precies deze kopjes: Wat ging goed vandaag:, Wat vroeg aandacht:, Belangrijk voor morgen:. Houd ieder onderdeel kort en concreet. Geen inleiding.'
+    : 'Vat een lesreflectie van een Nederlandse basisschoolleerkracht kort en praktisch samen. Gebruik precies deze kopjes: Wat ging goed:, Wat kan beter:, Volgende keer:. Houd ieder onderdeel kort en concreet. Geen inleiding.';
+  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'system',content:system},{role:'user',content:String(text||'')}]})});
+  const out=assistantText(data);
+  if(!out)throw new Error('OpenAI gaf geen samenvatting terug.');
+  return {text:out};
+}
 
 export async function summarizeNote(text){const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'system',content:'Maak van deze Nederlandse gesproken of getypte notitie een korte, duidelijke en bruikbare samenvatting. Behoud belangrijke namen, afspraken, data en actiepunten. Geen inleiding en geen ondertekening.'},{role:'user',content:String(text||'')} ]})});const out=assistantText(data);if(!out)throw new Error('OpenAI gaf geen samenvatting terug.');return {text:out}}
 export async function transcribe(blob){if(!blob)throw new Error('Geen audio-opname gevonden.');const type=blob.type||'audio/webm',ext=type.includes('mp4')?'m4a':type.includes('wav')?'wav':type.includes('ogg')?'ogg':'webm',fd=new FormData();fd.append('file',blob,`opname.${ext}`);fd.append('model',DEFAULT_TRANSCRIBE_MODEL);fd.append('language','nl');return openai('/audio/transcriptions',{method:'POST',body:fd})}
