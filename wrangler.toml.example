@@ -1,0 +1,9 @@
+name = "meester-martijn-api"
+main = "worker.js"
+compatibility_date = "2026-08-10"
+
+# Zet dit op jouw GitHub Pages URL, bijvoorbeeld:
+# [vars]
+# ALLOWED_ORIGIN = "https://jouwnaam.github.io"
+# OPENAI_MODEL = "gpt-5-mini"
+# TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"

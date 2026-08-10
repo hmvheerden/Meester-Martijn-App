@@ -1,0 +1,12 @@
+const DB_NAME='meester-martijn-app'; const DB_VERSION=2;
+const STORES=['notes','reflections','soundboards','sounds','savedGroups','todos'];
+let dbPromise;
+export function db(){if(!dbPromise)dbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;for(const s of STORES)if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});return dbPromise}
+export async function put(store,value){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).put(value);t.oncomplete=()=>res(value);t.onerror=()=>rej(t.error)})}
+export async function getAll(store){const d=await db();return new Promise((res,rej)=>{const r=d.transaction(store).objectStore(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+export async function del(store,id){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).delete(id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+export async function clear(store){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).clear();t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+export async function clearAll(){for(const s of STORES)await clear(s)}
+export const settings={get:(k,f='')=>{try{const v=localStorage.getItem('sa:'+k);return v===null?f:JSON.parse(v)}catch{return f}},set:(k,v)=>localStorage.setItem('sa:'+k,JSON.stringify(v)),remove:k=>localStorage.removeItem('sa:'+k)};
+export async function exportData(){const data={version:1,exportedAt:new Date().toISOString(),settings:{email:settings.get('email'),backend:settings.get('backend'),theme:settings.get('theme','auto'),classList:settings.get('classList',[]),subjects:settings.get('subjects',[]),avoidPairs:settings.get('avoidPairs',[]),preferPairs:settings.get('preferPairs',[]),multiAudio:settings.get('multiAudio',false)},notes:await getAll('notes'),reflections:await getAll('reflections'),soundboards:await getAll('soundboards'),savedGroups:await getAll('savedGroups'),todos:await getAll('todos')};return data}
+export async function importData(data){if(!data||data.version!==1)throw new Error('Onbekend exportformaat');for(const [k,v] of Object.entries(data.settings||{}))settings.set(k,v);for(const s of ['notes','reflections','soundboards','savedGroups','todos'])for(const item of data[s]||[])await put(s,item)}
