@@ -73,3 +73,18 @@
   padding-right:7px;
 }
 .reflection-mode{grid-template-columns:repeat(2,1fr)}
+
+.feedback-photo-wrap{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.feedback-photo{max-width:100%;max-height:300px;object-fit:contain;border-radius:14px;border:1px solid var(--line)}
+
+.timer-card{text-align:center}
+.timer-display{font-size:clamp(64px,20vw,120px);font-weight:900;letter-spacing:-4px;line-height:1;margin:24px 0}
+.timer-presets{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:18px}
+
+.points-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.points-name{font-weight:750;font-size:17px;flex:1}
+.points-controls{display:flex;align-items:center;gap:10px}
+.points-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);font-size:28px;font-weight:800;background:var(--card);color:var(--text)}
+.points-btn.plus{color:#30d158}
+.points-btn.minus{color:var(--danger)}
+.points-score{min-width:42px;text-align:center;font-size:24px;font-weight:850}

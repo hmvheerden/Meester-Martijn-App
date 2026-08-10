@@ -1,5 +1,5 @@
-const DB_NAME='meester-martijn-app'; const DB_VERSION=2;
-const STORES=['notes','reflections','soundboards','sounds','savedGroups','todos'];
+const DB_NAME='meester-martijn-app'; const DB_VERSION=4;
+const STORES=['notes','reflections','soundboards','sounds','savedGroups','todos','feedback','points'];
 let dbPromise;
 export function db(){if(!dbPromise)dbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;for(const s of STORES)if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});return dbPromise}
 export async function put(store,value){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).put(value);t.oncomplete=()=>res(value);t.onerror=()=>rej(t.error)})}

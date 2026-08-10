@@ -50,6 +50,17 @@ export async function generalChat(messages){
   return {text:out};
 }
 
+
+export async function summarizeFeedback(text,student=''){
+  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[
+    {role:'system',content:'Vat feedback van een Nederlandse basisschoolleerkracht kort, feitelijk en professioneel samen. Behoud concrete observaties en eventuele vervolgactie. Schrijf geen begroeting, afsluiting of ondertekening. Formuleer geschikt om later in een e-mail te gebruiken.'},
+    {role:'user',content:`Leerling: ${student||'niet gekozen'}\nFeedback: ${String(text||'')}`}
+  ]})});
+  const out=assistantText(data);
+  if(!out)throw new Error('OpenAI gaf geen samenvatting terug.');
+  return {text:out};
+}
+
 export async function summarizeReflection(text,mode='lesson'){
   const system=mode==='day'
     ? 'Vat een dagreflectie van een Nederlandse basisschoolleerkracht kort en praktisch samen. Gebruik precies deze kopjes: Wat ging goed vandaag:, Wat vroeg aandacht:, Belangrijk voor morgen:. Houd ieder onderdeel kort en concreet. Geen inleiding.'

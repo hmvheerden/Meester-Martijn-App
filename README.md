@@ -57,3 +57,30 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Reflectie heeft Lesreflectie en Dagreflectie.
 - Beide reflectietypen ondersteunen typen, inspreken, AI-samenvatting, opslaan, kopiëren en mailen.
 - Onderste navigatie bevat Home, To Do, Notities, Mail, Klas en Reflectie.
+
+## Versie 12
+- Nieuwe pagina Feedback.
+- Leerling kiezen uit de opgeslagen klassenlijst.
+- Foto maken met de iPhone-camera of een bestaande foto kiezen.
+- Feedback typen of inspreken en transcriberen.
+- Feedback met AI kort samenvatten.
+- Mail opstellen naar het e-mailadres uit Instellingen.
+- Bij een foto gebruikt de app het iOS-deelmenu zodat Mail de foto als bijlage kan ontvangen.
+
+## Versie 13
+- Klas bevat nu ook Beurten en Timer.
+- Beurten kiest willekeurig uit de klassenlijst en voorkomt herhaling totdat iedereen geweest is.
+- Timer heeft 1, 5, 10, 15 en 30 minuten, een eigen tijd, pauzeren en resetten.
+
+## Versie 14
+- Feedback is verplaatst naar Klas.
+- Klas bevat nu Groepjesmaker, Namenrad, Soundboards, Beurten, Timer en Feedback.
+- Feedback staat niet meer als losse knop in het onderste hoofdmenu.
+
+## Versie 15
+- Nieuwe pagina Punten onder Klas.
+- Volledige klassenlijst met + en - per leerling.
+- Punten blijven lokaal opgeslagen.
+- Alle punten in één keer op 0 zetten.
+- Puntenoverzicht kopiëren.
+- Puntenoverzicht direct mailen naar het e-mailadres uit Instellingen.
