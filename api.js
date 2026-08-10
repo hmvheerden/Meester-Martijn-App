@@ -15,10 +15,16 @@ async function openai(path,options={}){
   const response=await fetch(`${OPENAI_BASE}${path}`,{...options,headers});
   const data=await response.json().catch(()=>({}));
   if(!response.ok){
-    const msg=data?.error?.message||data?.error||`OpenAI gaf foutcode ${response.status}.`;
-    if(response.status===401)throw new Error('De OpenAI API-key is ongeldig of niet meer actief.');
-    if(response.status===429)throw new Error('OpenAI-limiet bereikt of onvoldoende API-tegoed.');
-    throw new Error(typeof msg==='string'?msg:'Er ging iets mis met OpenAI.');
+    const err=data?.error||{};
+    const msg=typeof err?.message==='string'?err.message:(typeof err==='string'?err:`OpenAI gaf foutcode ${response.status}.`);
+    const code=err?.code||err?.type||'';
+    if(response.status===401)throw new Error(`API-key geweigerd (401): ${msg}`);
+    if(response.status===429){
+      if(code==='insufficient_quota') throw new Error(`OpenAI meldt onvoldoende API-tegoed/projectquotum (429 · ${code}): ${msg}`);
+      if(code==='rate_limit_exceeded') throw new Error(`Te veel API-verzoeken in korte tijd (429 · ${code}): ${msg}`);
+      throw new Error(`OpenAI-fout 429${code?` · ${code}`:''}: ${msg}`);
+    }
+    throw new Error(`OpenAI-fout ${response.status}${code?` · ${code}`:''}: ${msg}`);
   }
   return data;
 }
@@ -38,8 +44,16 @@ function parseMail(text){
 const mailInstructions=`Je helpt een Nederlandse basisschoolleerkracht met e-mails. Schrijf vriendelijk, duidelijk, professioneel, niet overdreven formeel en bondig. Corrigeer grammatica vanzelf. Geef uitsluitend geldige JSON terug in deze vorm: {"subject":"...","body":"..."}. Gebruik geen markdown of codeblokken.`;
 
 export async function testConnection(){
-  const data=await openai('/models',{method:'GET'});
-  return {ok:Array.isArray(data?.data)};
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:textModel(),
+      messages:[{role:'user',content:'Antwoord uitsluitend met: OK'}],
+      max_completion_tokens:8
+    })
+  });
+  return {ok:Boolean(assistantText(data)),model:textModel()};
 }
 
 export async function chat(messages,action='compose'){
