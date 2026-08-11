@@ -1,9 +1,29 @@
 import {getAll,put,del,settings} from './storage.js';
-import {summarizeReflection,transcribe} from './api.js';
+import {summarizeReflection,transcribe,adjustText,extractTodoActions} from './api.js';
 import {Recorder} from './recorder.js';
 import {uid,esc,fmt,copy,mailto,toast} from './utils.js';
+import {createTodo} from './planner-utils.js';
 
 let recorder=null;
+let adjustRecorder=null;
+
+function reflectionTxtFile(title,body){
+  const safeTitle=String(title||'Reflectie').replace(/[\\/:*?"<>|]/g,'-').slice(0,80);
+  return new File([String(body||'')],`${safeTitle}.txt`,{type:'text/plain;charset=utf-8'});
+}
+async function shareReflectionTxt(title,body){
+  if(!String(body||'').trim())return toast('Voeg eerst een reflectie toe.');
+  const file=reflectionTxtFile(title,body);
+  if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+    try{await navigator.share({title,files:[file]});return}
+    catch(e){if(e?.name==='AbortError')return}
+  }
+  const url=URL.createObjectURL(file);
+  const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast('Tekstbestand aangemaakt');
+}
+
 
 export async function renderReflection(root){
   const subjects=settings.get('subjects',['Rekenen','Taal','Spelling','Lezen','Wereldoriëntatie','Gym','Overig']);
@@ -36,15 +56,15 @@ export async function renderReflection(root){
 
     <div class="row" style="margin-top:12px">
       <button id="summarize" class="btn">Maak AI-samenvatting</button>
-      <button id="shorten" class="btn secondary">Korter maken</button>
+      <button id="shorten" class="btn secondary">Korter maken</button><button id="adjustReflectionVoice" class="btn secondary">🎙️ Spreek in om aan te passen</button><span id="adjustReflectionState"></span>
     </div>
 
     <div class="field"><label>Samenvatting</label><textarea id="summary" class="textarea" style="min-height:190px"></textarea></div>
     <div class="row">
       <button id="saveReflection" class="btn">Opslaan</button>
       <button id="copyReflection" class="btn secondary">Kopiëren</button>
-      <button id="mailReflection" class="btn secondary">Mailen</button>
-    </div>
+      <button id="mailReflection" class="btn secondary">Mail naar mezelf</button><button id="shareReflection" class="btn secondary">Deel .txt</button><button id="reflectionToTodo" class="btn secondary">Naar To Do</button><button id="extractActions" class="btn secondary">Haal acties eruit</button>
+    </div><div id="reflectionActions" class="hidden" style="margin-top:12px"></div>
   </div>
 
   <div class="field"><input id="searchReflection" class="input" placeholder="Zoek in reflecties"></div>
@@ -101,7 +121,7 @@ export async function renderReflection(root){
         <div class="row" style="margin-top:9px">
           <button class="btn secondary small" data-edit="${x.id}">Open</button>
           <button class="btn secondary small" data-copy="${x.id}">Kopiëren</button>
-          <button class="btn secondary small" data-mail="${x.id}">Mailen</button>
+          <button class="btn secondary small" data-mail="${x.id}">Mail naar mezelf</button><button class="btn secondary small" data-file="${x.id}">Deel .txt</button><button class="btn secondary small" data-todo="${x.id}">Naar To Do</button>
           <button class="btn danger small" data-del="${x.id}">Verwijderen</button>
         </div>
       </div>`;
@@ -126,11 +146,31 @@ export async function renderReflection(root){
       const title=(x.mode||'lesson')==='day'?(x.dayTitle||'Dagreflectie'):(x.lesson||x.subject||'Lesreflectie');
       mailto(settings.get('email',''),`Reflectie – ${title}`,x.summary||x.text||'');
     });
+    list.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>{
+      const x=items.find(i=>i.id===b.dataset.file);
+      const title=(x.mode||'lesson')==='day'?(x.dayTitle||'Dagreflectie'):(x.lesson||x.subject||'Lesreflectie');
+      shareReflectionTxt(`Reflectie – ${title}`,x.summary||x.text||'');
+    });
+    list.querySelectorAll('[data-todo]').forEach(b=>b.onclick=async()=>{
+      const x=items.find(i=>i.id===b.dataset.todo);await createTodo(x.summary||x.text||'',{folder:'today'});toast('Toegevoegd aan To Do vandaag');
+    });
     list.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
       if(confirm('Deze reflectie verwijderen?')){await del('reflections',b.dataset.del);draw()}
     });
   }
 
+  root.querySelector('#adjustReflectionVoice').onclick=async()=>{
+    const btn=root.querySelector('#adjustReflectionVoice'),state=root.querySelector('#adjustReflectionState');
+    const current=(summary.value||text.value).trim();if(!current)return toast('Maak eerst een reflectie of samenvatting.');
+    if(!adjustRecorder){
+      try{adjustRecorder=new Recorder(sec=>state.innerHTML=`<span class="recording"><span class="pulse"></span>${sec}s</span>`);await adjustRecorder.start();btn.textContent='Stop aanpassing'}
+      catch(e){adjustRecorder=null;toast(e.message)}
+    }else{
+      const r=adjustRecorder;adjustRecorder=null;btn.textContent='🎙️ Spreek in om aan te passen';state.textContent='Transcriberen…';
+      try{const blob=await r.stop();const t=await transcribe(blob);state.textContent='Reflectie aanpassen…';const d=await adjustText(current,t.text,'reflectie');if(summary.value.trim())summary.value=d.text;else text.value=d.text;state.textContent=`Aangepast op: ${t.text}`}
+      catch(e){state.textContent='';toast(e.message)}
+    }
+  };
   root.querySelector('#summarize').onclick=()=>ai(false);
   root.querySelector('#shorten').onclick=()=>ai(true);
 
@@ -157,6 +197,24 @@ export async function renderReflection(root){
   root.querySelector('#mailReflection').onclick=()=>{
     const title=mode==='day'?(dayTitle.value||'Dagreflectie'):(lesson.value||subject.value||'Lesreflectie');
     mailto(settings.get('email',''),`Reflectie – ${title}`,summary.value||text.value||'');
+  };
+  root.querySelector('#shareReflection').onclick=()=>{
+    const title=mode==='day'?(dayTitle.value||'Dagreflectie'):(lesson.value||subject.value||'Lesreflectie');
+    shareReflectionTxt(`Reflectie – ${title}`,summary.value||text.value||'');
+  };
+  root.querySelector('#reflectionToTodo').onclick=async()=>{
+    const body=(summary.value||text.value).trim();if(!body)return toast('Maak eerst een reflectie.');
+    await createTodo(body,{folder:'today'});toast('Toegevoegd aan To Do vandaag');
+  };
+  root.querySelector('#extractActions').onclick=async()=>{
+    const body=(summary.value||text.value).trim();if(!body)return toast('Maak eerst een reflectie.');
+    const box=root.querySelector('#reflectionActions');
+    try{
+      box.classList.remove('hidden');box.textContent='Actiepunten zoeken…';
+      const d=await extractTodoActions(body);
+      box.innerHTML=d.actions.length?`<div class="section-title">Vervolgacties</div>${d.actions.map((a,i)=>`<div class="item row"><span class="grow">${esc(a)}</span><button class="btn secondary tiny" data-action="${i}">Naar To Do</button></div>`).join('')}`:'<div class="muted">Geen concrete vervolgacties gevonden.</div>';
+      box.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{await createTodo(d.actions[+b.dataset.action],{folder:'today'});b.textContent='Toegevoegd';b.disabled=true});
+    }catch(e){box.textContent='';toast(e.message)}
   };
   root.querySelector('#searchReflection').oninput=draw;
 

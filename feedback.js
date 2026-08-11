@@ -1,9 +1,11 @@
 import {settings} from './storage.js';
-import {transcribe,summarizeFeedback} from './api.js';
+import {transcribe,summarizeFeedback,adjustFeedback} from './api.js';
 import {Recorder} from './recorder.js';
 import {esc,mailto,toast} from './utils.js';
+import {createTodo} from './planner-utils.js';
 
 let recorder=null;
+let adjustRecorder=null;
 let photoFile=null;
 let photoUrl='';
 
@@ -55,17 +57,16 @@ export async function renderFeedback(root){
     <div id="feedbackTranscript" class="muted" style="margin-top:10px"></div>
 
     <div class="row" style="margin-top:12px">
-      <button id="feedbackSummarize" class="btn">Vat samen met AI</button>
+      <button id="feedbackSummarize" class="btn">Maak feedback met AI</button><button id="feedbackAdjustVoice" class="btn secondary">🎙️ Spreek in om aan te passen</button><span id="feedbackAdjustState"></span>
     </div>
     <div class="field"><label>Samenvatting</label>
       <textarea id="feedbackSummary" class="textarea" style="min-height:150px" placeholder="Hier verschijnt de AI-samenvatting…"></textarea>
     </div>
 
     <div class="row">
-      <button id="feedbackMail" class="btn">Mail opstellen</button>
-      <button id="feedbackClear" class="btn secondary">Wissen</button>
+      <button id="feedbackMail" class="btn">Mail naar mezelf</button><button id="feedbackSharePhoto" class="btn secondary">Deel met foto</button><button id="feedbackToTodo" class="btn secondary">Naar To Do</button><button id="feedbackClear" class="btn secondary">Wissen</button>
     </div>
-    <p class="muted">Met een foto opent ‘Mail opstellen’ het iOS-deelmenu. Kies daar Mail om de foto als bijlage mee te sturen. Zonder foto opent direct je mailapp.</p>
+    <p class="muted">Mail naar mezelf gebruikt het e-mailadres uit Instellingen. Met ‘Deel met foto’ kun je de foto en feedback via het iOS-deelmenu delen.</p>
   </div>`;
 
   const student=root.querySelector('#feedbackStudent');
@@ -111,13 +112,35 @@ export async function renderFeedback(root){
     finally{root.querySelector('#feedbackSummarize').disabled=false}
   };
 
-  root.querySelector('#feedbackMail').onclick=async()=>{
+  root.querySelector('#feedbackMail').onclick=()=>{
     if(!student.value)return toast('Kies eerst een leerling.');
-    const body=(summary.value||text.value).trim();
-    if(!body)return toast('Voeg eerst feedback toe.');
-    const to=settings.get('email','');
-    const subject=`Feedback – ${student.value}`;
-    await shareMailWithPhoto({to,subject,body,file:photoFile});
+    const body=(summary.value||text.value).trim();if(!body)return toast('Voeg eerst feedback toe.');
+    mailto(settings.get('email',''),`Feedback – ${student.value}`,body);
+  };
+
+  root.querySelector('#feedbackSharePhoto').onclick=async()=>{
+    if(!student.value)return toast('Kies eerst een leerling.');
+    const body=(summary.value||text.value).trim();if(!body)return toast('Voeg eerst feedback toe.');
+    await shareMailWithPhoto({to:settings.get('email',''),subject:`Feedback – ${student.value}`,body,file:photoFile});
+  };
+
+  root.querySelector('#feedbackAdjustVoice').onclick=async()=>{
+    const btn=root.querySelector('#feedbackAdjustVoice'),state=root.querySelector('#feedbackAdjustState');
+    const current=(summary.value||text.value).trim();if(!current)return toast('Maak eerst feedback.');
+    if(!adjustRecorder){
+      try{adjustRecorder=new Recorder(sec=>state.innerHTML=`<span class="recording"><span class="pulse"></span>${sec}s</span>`);await adjustRecorder.start();btn.textContent='Stop aanpassing'}
+      catch(e){adjustRecorder=null;toast(e.message)}
+    }else{
+      const r=adjustRecorder;adjustRecorder=null;btn.textContent='🎙️ Spreek in om aan te passen';state.textContent='Transcriberen…';
+      try{const blob=await r.stop();const t=await transcribe(blob);state.textContent='Feedback aanpassen…';const d=await adjustFeedback(current,t.text,student.value);summary.value=d.text;state.textContent=`Aangepast op: ${t.text}`}
+      catch(e){state.textContent='';toast(e.message)}
+    }
+  };
+
+  root.querySelector('#feedbackToTodo').onclick=async()=>{
+    const body=(summary.value||text.value).trim();if(!body)return toast('Maak eerst feedback.');
+    await createTodo(`Vervolgactie feedback ${student.value?student.value+': ':''}${body}`,{folder:'teacher'});
+    toast('Toegevoegd aan To Do Leerkracht');
   };
 
   root.querySelector('#feedbackClear').onclick=()=>{

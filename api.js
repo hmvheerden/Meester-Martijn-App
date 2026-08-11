@@ -51,6 +51,58 @@ export async function generalChat(messages){
 }
 
 
+export async function adjustText(existing,instruction,context='tekst'){
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:textModel(),
+      messages:[
+        {role:'system',content:`Pas een bestaande Nederlandse ${context} aan op basis van een gesproken wijzigingsopdracht. Geef uitsluitend de volledig aangepaste tekst terug. Behoud informatie die niet gewijzigd hoeft te worden. Geen uitleg, geen inleiding en geen aanhalingstekens.`},
+        {role:'user',content:`Bestaande tekst:\n${String(existing||'')}\n\nWijzigingsopdracht:\n${String(instruction||'')}`}
+      ]
+    })
+  });
+  const out=assistantText(data).trim();
+  if(!out)throw new Error('OpenAI gaf geen aangepaste tekst terug.');
+  return {text:out};
+}
+
+export async function adjustMailByInstruction(subject,body,instruction){
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:textModel(),
+      messages:[
+        {role:'system',content:mailInstructions},
+        {role:'user',content:`Pas deze e-mail aan volgens de opdracht.\n\nOnderwerp: ${String(subject||'')}\n\nBericht:\n${String(body||'')}\n\nWijzigingsopdracht:\n${String(instruction||'')}`}
+      ],
+      response_format:{type:'json_object'}
+    })
+  });
+  const result=parseMail(assistantText(data));
+  if(!result.body)throw new Error('OpenAI gaf geen bruikbare aangepaste e-mail terug.');
+  return result;
+}
+
+export async function adjustFeedback(existing,instruction,student=''){
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:textModel(),
+      messages:[
+        {role:'system',content:`Pas leerlingfeedback aan volgens de gesproken opdracht. Gebruik ALTIJD de jij-vorm. Begin met de leerlingnaam gevolgd door een komma als een naam beschikbaar is. Geef uitsluitend de volledig aangepaste feedback terug, zonder uitleg of afsluiting.`},
+        {role:'user',content:`Leerling: ${student||'niet gekozen'}\nBestaande feedback:\n${String(existing||'')}\n\nWijzigingsopdracht:\n${String(instruction||'')}`}
+      ]
+    })
+  });
+  const out=assistantText(data).trim();
+  if(!out)throw new Error('OpenAI gaf geen aangepaste feedback terug.');
+  return {text:out};
+}
+
 export async function makeTodoFromSpeech(text){
   const system=`Maak van gesproken Nederlandse tekst precies één kort, duidelijk en uitvoerbaar To Do-punt voor een basisschoolleerkracht.
 
@@ -82,7 +134,7 @@ Regels:
 
 export async function summarizeFeedback(text,student=''){
   const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[
-    {role:'system',content:'Vat feedback van een Nederlandse basisschoolleerkracht kort, feitelijk en professioneel samen. Behoud concrete observaties en eventuele vervolgactie. Schrijf geen begroeting, afsluiting of ondertekening. Formuleer geschikt om later in een e-mail te gebruiken.'},
+    {role:'system',content:`Schrijf korte, concrete feedback voor een basisschoolleerling. Gebruik ALTIJD de jij-vorm. Begin met de naam van de leerling gevolgd door een komma, bijvoorbeeld: "Sara, je hebt ...". Behoud concrete observaties en eventuele vervolgactie. Formuleer positief, duidelijk en natuurlijk. Geen begroeting, afsluiting of ondertekening.`},
     {role:'user',content:`Leerling: ${student||'niet gekozen'}\nFeedback: ${String(text||'')}`}
   ]})});
   const out=assistantText(data);
@@ -158,4 +210,68 @@ Geef uitsluitend geldige JSON terug:
     location:String(obj.location||'').trim(),
     notes:String(obj.notes||'').trim()
   };
+}
+
+
+export async function classifyQuickCapture(text,context={}){
+  const now=String(context.now||new Date().toISOString());
+  const timezone=String(context.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Amsterdam');
+  const system=`Classificeer één Nederlandse snelle invoer voor een persoonlijke schoolassistent.
+Huidige datum/tijd: ${now}
+Tijdzone: ${timezone}
+
+Kies exact één type:
+- todo: concrete taak/actie
+- calendar: afspraak of gebeurtenis met datum/tijd
+- note: informatie om te bewaren zonder duidelijke actie
+- inbox: onduidelijk of nog te verwerken
+
+Geef alleen geldige JSON:
+{"type":"todo|calendar|note|inbox","text":"korte nette tekst","dueDate":"YYYY-MM-DD of leeg","priority":false}
+
+Regels:
+- Begrijp relatieve datums zoals vandaag, morgen, vrijdag.
+- Als iemand woorden spelt of schrijfwijze toelicht, verwerk de bedoelde schrijfwijze.
+- Gebruik priority=true alleen als de spreker duidelijk zegt dat het belangrijk/urgent is.
+- Voor calendar mag text de volledige natuurlijke opdracht blijven zodat de Agenda-parser hem daarna exact kan verwerken.`;
+  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    model:textModel(),
+    messages:[{role:'system',content:system},{role:'user',content:String(text||'')}],
+    response_format:{type:'json_object'}
+  })});
+  const raw=assistantText(data).replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  let obj;try{obj=JSON.parse(raw)}catch{throw new Error('AI kon de snelle invoer niet indelen.')}
+  return {
+    type:['todo','calendar','note','inbox'].includes(obj.type)?obj.type:'inbox',
+    text:String(obj.text||text||'').trim(),
+    dueDate:/^\d{4}-\d{2}-\d{2}$/.test(String(obj.dueDate||''))?String(obj.dueDate):'',
+    priority:Boolean(obj.priority)
+  };
+}
+
+export async function planDayWithAI(tasks,events,date){
+  const system=`Maak een korte, praktische dagplanning voor een basisschoolleerkracht.
+Gebruik uitsluitend de aangeleverde taken en afspraken. Houd rekening met tijden van afspraken.
+Zet belangrijke en verlopen taken vooraan. Schrijf in natuurlijk Nederlands met een overzichtelijke volgorde.
+Maximaal ongeveer 10 regels. Geen lange uitleg.`;
+  const payload={date,tasks,events};
+  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    model:textModel(),
+    messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(payload)}]
+  })});
+  const out=assistantText(data);if(!out)throw new Error('AI gaf geen dagplanning terug.');return {text:out};
+}
+
+export async function extractTodoActions(text){
+  const system=`Haal concrete vervolgacties uit een Nederlandse reflectie, notitie, feedback of AI-tekst.
+Geef uitsluitend geldige JSON: {"actions":["actie 1","actie 2"]}.
+Maak iedere actie kort, uitvoerbaar en zelfstandig begrijpelijk. Maximaal 5 acties. Als er geen echte actie is, geef een lege lijst.`;
+  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    model:textModel(),
+    messages:[{role:'system',content:system},{role:'user',content:String(text||'')}],
+    response_format:{type:'json_object'}
+  })});
+  const raw=assistantText(data).replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  let obj;try{obj=JSON.parse(raw)}catch{throw new Error('AI kon geen actiepunten uitlezen.')}
+  return {actions:Array.isArray(obj.actions)?obj.actions.map(x=>String(x).trim()).filter(Boolean).slice(0,5):[]};
 }

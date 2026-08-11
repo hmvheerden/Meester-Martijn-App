@@ -150,3 +150,29 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Spraak wordt eerst getranscribeerd en daarna door AI omgezet naar één kort, duidelijk en uitvoerbaar actiepunt.
 - AI krijgt expliciete instructies om gesproken aanwijzingen over schrijfwijze te verwerken, zoals lange ij/korte ei, dubbele letters, hoofdletters, streepjes en `schrijf je als...`.
 - Het AI-resultaat komt eerst in het gewone invoerveld zodat het nog aangepast kan worden voordat het wordt toegevoegd.
+
+## Versie 26
+- Reflecties hebben nu expliciet `Mail naar mezelf`, zowel bij de huidige reflectie als bij opgeslagen reflecties.
+- Reflecties kunnen daarnaast als `.txt` worden gedeeld, net als bij Notities.
+- De mail gebruikt het e-mailadres uit Instellingen en neemt de AI-samenvatting over als die aanwezig is; anders de volledige reflectietekst.
+
+## Versie 27
+- Meesterassistent: ieder AI-antwoord heeft Kopieer, Mail antwoord, Deel .txt en Spreek aanpassing in.
+- In de chat kun je ook geselecteerde tekst via `Mail selectie` naar het e-mailadres uit Instellingen sturen.
+- Feedback wordt door AI altijd in de jij-vorm geschreven en begint waar mogelijk met `Naam, je ...`.
+- Feedback heeft `Mail naar mezelf` naar het ingestelde e-mailadres; foto delen blijft apart via het iOS-deelmenu.
+- Mail, Notities, Reflectie, Feedback, To Do en Agenda hebben nu een optie `Spreek in om aan te passen` voor het bestaande resultaat.
+- Reflectie en Feedback gebruiken voor mailen het e-mailadres dat bij Instellingen is opgeslagen.
+
+## Versie 28 – planning en structuur
+- Nieuw hoofdmenu `Vandaag` met Dagstart, AI-dagplanning, weekoverzicht, Inbox, snelle invoer en zoeken door de app.
+- Snelle invoer kan getypt of ingesproken worden. AI deelt hem automatisch in als To Do, Agenda, Notitie of Inbox.
+- Home heeft een snelle knop naar Snelle invoer.
+- To Do ondersteunt deadlines, belangrijk-markering en terugkerende taken (dagelijks, werkdagen, wekelijks, maandelijks).
+- Verlopen taken worden als `Te laat` gemarkeerd.
+- Terugkerende taken maken bij afronden automatisch de volgende taak aan.
+- Agenda-afspraken worden na goedkeuring lokaal onthouden voor Vandaag en Weekoverzicht.
+- Chat-antwoorden, Notities, Feedback en Reflecties kunnen direct naar To Do.
+- Reflectie kan met AI concrete vervolgacties eruit halen en die afzonderlijk naar To Do sturen.
+- Inbox-items kunnen handmatig of met AI naar To Do, Notities of Agenda worden verwerkt.
+- `Zoek door alles` zoekt in To Do, Notities, Reflecties, Feedback, Agenda, Checklists, Inbox, Soundboards, opgeslagen groepjes en Punten.

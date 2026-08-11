@@ -1,8 +1,10 @@
 import {parseCalendarEvent,transcribe} from './api.js';
 import {Recorder} from './recorder.js';
-import {esc,toast} from './utils.js';
+import {esc,toast,uid} from './utils.js';
+import {put,settings} from './storage.js';
 
 let recorder=null;
+let adjustRecorder=null;
 
 function pad(n){return String(n).padStart(2,'0')}
 function icsEscape(v=''){
@@ -83,6 +85,8 @@ export async function renderAgenda(root){
       <div id="agendaConfirmActions" class="row" style="margin-top:14px">
         <button id="confirmAgenda" class="btn">Ja, het klopt</button>
         <button id="redoAgenda" class="btn secondary">Nee, opnieuw</button>
+        <button id="adjustAgendaVoice" class="btn secondary">🎙️ Spreek in om aan te passen</button>
+        <span id="adjustAgendaState"></span>
       </div>
 
       <div id="agendaApproved" class="hidden" style="margin-top:14px">
@@ -116,6 +120,9 @@ export async function renderAgenda(root){
   const confirmActions=root.querySelector('#agendaConfirmActions');
   const editCard=root.querySelector('#agendaEditCard');
   const title=root.querySelector('#agendaTitle'),date=root.querySelector('#agendaDate'),start=root.querySelector('#agendaStart'),end=root.querySelector('#agendaEnd'),allDay=root.querySelector('#agendaAllDay'),times=root.querySelector('#agendaTimes'),location=root.querySelector('#agendaLocation'),notes=root.querySelector('#agendaNotes');
+  const pendingPrompt=settings.get('pendingAgendaPrompt','');
+  if(pendingPrompt){prompt.value=pendingPrompt;settings.remove('pendingAgendaPrompt');setTimeout(()=>make(),100);}
+
 
   function formatDateNL(value){
     try{return new Date(`${value}T12:00:00`).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
@@ -177,8 +184,39 @@ export async function renderAgenda(root){
   root.querySelector('#makeAgenda').onclick=make;
   allDay.onchange=()=>times.classList.toggle('hidden',allDay.checked);
 
-  root.querySelector('#confirmAgenda').onclick=()=>{
+  root.querySelector('#adjustAgendaVoice').onclick=async()=>{
+    const btn=root.querySelector('#adjustAgendaVoice'),state=root.querySelector('#adjustAgendaState');
+    const current=syncEvent();
+    if(!current.title||!current.date)return toast('Maak eerst een agenda-item.');
+    if(!adjustRecorder){
+      try{adjustRecorder=new Recorder(sec=>state.innerHTML=`<span class="recording"><span class="pulse"></span>${sec}s</span>`);await adjustRecorder.start();btn.textContent='Stop aanpassing'}
+      catch(e){adjustRecorder=null;toast(e.message)}
+    }else{
+      const r=adjustRecorder;adjustRecorder=null;btn.textContent='🎙️ Spreek in om aan te passen';state.textContent='Transcriberen…';
+      try{
+        const blob=await r.stop(),t=await transcribe(blob);
+        state.textContent='Agenda-item aanpassen…';
+        const instruction=`Bestaande afspraak:
+Titel: ${current.title}
+Datum: ${current.date}
+Begintijd: ${current.startTime}
+Eindtijd: ${current.endTime}
+Locatie: ${current.location||''}
+Notities: ${current.notes||''}
+
+Pas deze afspraak alleen aan volgens deze wijzigingsopdracht en behoud alle andere gegevens:
+${t.text}`;
+        const ev=await parseCalendarEvent(instruction,{now:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone});
+        showEvent(ev);
+        state.textContent=`Aangepast op: ${t.text}`;
+      }catch(e){state.textContent='';toast(e.message)}
+    }
+  };
+
+  root.querySelector('#confirmAgenda').onclick=async()=>{
     event=syncEvent();
+    if(!event.localId)event.localId=uid();
+    await put('calendarEvents',{id:event.localId,title:event.title,date:event.date,startTime:event.startTime,endTime:event.endTime,allDay:event.allDay,location:event.location,notes:event.notes,updatedAt:new Date().toISOString()});
     drawSummary(event);
     confirmActions.classList.add('hidden');
     editCard.classList.add('hidden');

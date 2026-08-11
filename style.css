@@ -172,3 +172,30 @@
   border-radius:13px;
   background:var(--bg);
 }
+
+/* v27: acties bij AI-resultaten */
+.btn.tiny{padding:5px 8px;font-size:11px;border-radius:9px}
+.chat-message-wrap{display:flex;flex-direction:column;gap:5px}
+.chat-answer-actions{display:flex;gap:5px;flex-wrap:wrap;margin:0 4px 6px}
+
+/* v28 planning */
+.quick-capture-card{border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+.planner-columns{display:grid;grid-template-columns:1fr;gap:18px;margin-top:14px}
+.compact-list{margin-top:8px}
+.mini-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.mini-row:last-child{border-bottom:0}
+.mini-row small{color:var(--muted);white-space:nowrap}
+.day-plan{white-space:pre-wrap;line-height:1.5;margin-top:12px;padding:12px;border-radius:13px;background:var(--bg);border:1px solid var(--line)}
+.week-day{padding:10px 0;border-bottom:1px solid var(--line)}
+.week-day:last-child{border-bottom:0}
+.week-line{font-size:14px;margin-top:5px}
+.badge{min-width:22px;height:22px;border-radius:999px;background:var(--accent);color:white;display:inline-grid;place-items:center;padding:0 7px;font-size:12px;font-weight:800}
+.todo-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.todo-important{display:flex;align-items:center;gap:8px;font-weight:700;margin:4px 0 12px}
+.todo-important input{width:21px;height:21px;accent-color:var(--accent)}
+.todo-item{position:relative}
+.todo-item.important{border-left:4px solid var(--accent)}
+.todo-meta-line{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:5px 42px 0 34px}
+.overdue-card{border-color:var(--danger)}
+.overdue-text{color:var(--danger);font-weight:750}
+@media(min-width:650px){.planner-columns{grid-template-columns:1fr 1fr}}
