@@ -144,3 +144,9 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Na goedkeuring deelt Agenda direct een .ics-bestand via het iOS-deelmenu.
 - Kies in het deelmenu `ICS To Calendar` om de afspraak aan Apple Agenda toe te voegen.
 - De eerdere regels voor standaardtijd en duur blijven behouden.
+
+## Versie 25
+- To Do heeft nu `To Do inspreken`.
+- Spraak wordt eerst getranscribeerd en daarna door AI omgezet naar één kort, duidelijk en uitvoerbaar actiepunt.
+- AI krijgt expliciete instructies om gesproken aanwijzingen over schrijfwijze te verwerken, zoals lange ij/korte ei, dubbele letters, hoofdletters, streepjes en `schrijf je als...`.
+- Het AI-resultaat komt eerst in het gewone invoerveld zodat het nog aangepast kan worden voordat het wordt toegevoegd.

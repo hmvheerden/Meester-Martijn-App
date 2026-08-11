@@ -51,6 +51,35 @@ export async function generalChat(messages){
 }
 
 
+export async function makeTodoFromSpeech(text){
+  const system=`Maak van gesproken Nederlandse tekst precies één kort, duidelijk en uitvoerbaar To Do-punt voor een basisschoolleerkracht.
+
+Regels:
+- Geef alleen het uiteindelijke To Do-punt terug, zonder inleiding, bullets, aanhalingstekens of uitleg.
+- Schrijf als een concrete actie, liefst beginnend met een werkwoord.
+- Verwijder stopwoorden, herhalingen en spreektaal.
+- Behoud relevante namen, data, tijden, vakken en details.
+- Let extra goed op expliciete aanwijzingen over schrijfwijze en spelling.
+- Voorbeelden van zulke aanwijzingen: "met lange ij", "met korte ei", "dubbele d", "met ck", "met een streepje", "hoofdletter", "schrijf je als...", of een woord dat letter voor letter wordt gespeld.
+- Als de spreker een schrijfwijze expliciet verduidelijkt, pas die verduidelijking toe in het uiteindelijke woord en laat de uitleg over de spelling zelf weg tenzij die inhoudelijk nodig is.
+- Verzin niets dat niet uit de gesproken tekst volgt.
+- Houd het compact maar volledig.`;
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:textModel(),
+      messages:[
+        {role:'system',content:system},
+        {role:'user',content:String(text||'')}
+      ]
+    })
+  });
+  const out=assistantText(data).replace(/^[-•]\s*/,'').replace(/^["“]|["”]$/g,'').trim();
+  if(!out)throw new Error('OpenAI gaf geen bruikbaar To Do-punt terug.');
+  return {text:out};
+}
+
 export async function summarizeFeedback(text,student=''){
   const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[
     {role:'system',content:'Vat feedback van een Nederlandse basisschoolleerkracht kort, feitelijk en professioneel samen. Behoud concrete observaties en eventuele vervolgactie. Schrijf geen begroeting, afsluiting of ondertekening. Formuleer geschikt om later in een e-mail te gebruiken.'},

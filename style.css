@@ -163,3 +163,12 @@
 
 .setup-steps{padding-left:22px;line-height:1.5}
 .setup-steps li{margin:8px 0}
+
+/* v25: To Do inspreken */
+.todo-speech-result{
+  margin-top:12px;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--bg);
+}
