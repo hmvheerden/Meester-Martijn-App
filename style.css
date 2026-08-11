@@ -146,3 +146,17 @@
   .home-chat-topbar .subtitle{display:none}
   .fullscreen-chat-card .chat-input{min-height:64px}
 }
+
+/* v19 Agenda */
+.calendar-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.calendar-all-day{display:flex;align-items:center;gap:9px;margin:10px 0;font-weight:700}
+.calendar-all-day input{width:22px;height:22px;accent-color:var(--accent)}
+.nav-inner{display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav-inner button{flex:0 0 auto;min-width:70px}
+
+.agenda-summary{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:10px}
+.agenda-summary-row{display:grid;grid-template-columns:88px 1fr;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);align-items:start}
+.agenda-summary-row:last-child{border-bottom:0}
+.agenda-summary-row span{color:var(--muted);font-size:13px;font-weight:700}
+.agenda-summary-row strong{font-size:15px;line-height:1.35}

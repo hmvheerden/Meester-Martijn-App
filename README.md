@@ -104,3 +104,25 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Onder Klas: Groepjesmaker, Namenrad, Checklist, Punten, Feedback, Timer, Beurten en Soundboards.
 - Instellingen blijft permanent rechtsboven.
 - Home blijft de schermvullende Meesterassistent-chat.
+
+## Versie 19
+- Nieuwe losse pagina Agenda.
+- Typ of spreek een agenda-opdracht in.
+- AI haalt titel, datum, begin/eindtijd, locatie en notities eruit.
+- Je krijgt altijd eerst een bewerkbaar controlescherm.
+- Open in Apple Agenda maakt een .ics-agenda-item voor iPhone.
+
+## Versie 20
+- Agenda staat direct naast Home in het hoofdmenu.
+- Volgorde: Home, Agenda, To Do, Notities, Mail, Klas, Reflectie.
+- Geen tijd genoemd: afspraak start standaard om 08:00.
+- Wel tijd genoemd maar geen duur/eindtijd: afspraak duurt standaard 15 minuten.
+- Genoemde duur of expliciete eindtijd wordt overgenomen.
+- Apple Agenda blijft geopend via een .ics-agenda-item.
+
+## Versie 21
+- Agenda toont eerst: Dit is de afspraak, klopt het zo?
+- De afspraak wordt kort opgesomd met titel, datum, tijd, locatie en notities.
+- Keuzes: Ja, het klopt / Nee, opnieuw.
+- Pas na goedkeuring verschijnt Open in Apple Agenda.
+- Bij Nee kun je de herkende afspraak aanpassen of opnieuw typen/inspreken.

@@ -73,3 +73,60 @@ export async function summarizeReflection(text,mode='lesson'){
 
 export async function summarizeNote(text){const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'system',content:'Maak van deze Nederlandse gesproken of getypte notitie een korte, duidelijke en bruikbare samenvatting. Behoud belangrijke namen, afspraken, data en actiepunten. Geen inleiding en geen ondertekening.'},{role:'user',content:String(text||'')} ]})});const out=assistantText(data);if(!out)throw new Error('OpenAI gaf geen samenvatting terug.');return {text:out}}
 export async function transcribe(blob){if(!blob)throw new Error('Geen audio-opname gevonden.');const type=blob.type||'audio/webm',ext=type.includes('mp4')?'m4a':type.includes('wav')?'wav':type.includes('ogg')?'ogg':'webm',fd=new FormData();fd.append('file',blob,`opname.${ext}`);fd.append('model',DEFAULT_TRANSCRIBE_MODEL);fd.append('language','nl');return openai('/audio/transcriptions',{method:'POST',body:fd})}
+
+
+export async function parseCalendarEvent(text,context={}){
+  const now=String(context.now||new Date().toISOString());
+  const timezone=String(context.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Amsterdam');
+  const system=`Je zet een Nederlandse gesproken of getypte agenda-opdracht om in één agenda-item.
+Huidige datum/tijd: ${now}
+Tijdzone: ${timezone}
+Interpreteer woorden als vandaag, morgen, overmorgen, volgende maandag enzovoort op basis van deze datum.
+
+Belangrijke regels:
+- Als de gebruiker GEEN tijd noemt: gebruik 08:00 als begintijd.
+- Als de gebruiker WEL een tijd noemt maar GEEN duur of eindtijd: gebruik 15 minuten duur.
+- Als de gebruiker een duur noemt, bijvoorbeeld "half uur", "30 minuten", "een uur", gebruik die duur.
+- Als de gebruiker een expliciete eindtijd noemt, gebruik die eindtijd.
+- Gebruik allDay alleen als de gebruiker letterlijk duidelijk maakt dat het om de hele dag gaat.
+- Verzin geen locatie of notities die niet genoemd zijn.
+
+Geef uitsluitend geldige JSON terug:
+{"title":"...","date":"YYYY-MM-DD","startTime":"HH:MM","endTime":"HH:MM","allDay":false,"location":"","notes":"","timeMentioned":true,"durationMentioned":false}`;
+
+  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    model:textModel(),
+    messages:[{role:'system',content:system},{role:'user',content:String(text||'')}],
+    response_format:{type:'json_object'}
+  })});
+  const raw=assistantText(data).replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  let obj;
+  try{obj=JSON.parse(raw)}catch{throw new Error('AI kon hier geen geldig agenda-item van maken.')}
+
+  function addMinutes(time,mins){
+    const [h,m]=String(time||'08:00').split(':').map(Number);
+    const d=new Date(2000,0,1,h||0,m||0);
+    d.setMinutes(d.getMinutes()+mins);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  const allDay=Boolean(obj.allDay);
+  let startTime=String(obj.startTime||'').trim();
+  let endTime=String(obj.endTime||'').trim();
+  const timeMentioned=Boolean(obj.timeMentioned);
+
+  if(!allDay){
+    if(!timeMentioned || !startTime) startTime='08:00';
+    if(!endTime) endTime=addMinutes(startTime,15);
+  }
+
+  return {
+    title:String(obj.title||'').trim(),
+    date:String(obj.date||'').trim(),
+    startTime,
+    endTime,
+    allDay,
+    location:String(obj.location||'').trim(),
+    notes:String(obj.notes||'').trim()
+  };
+}
