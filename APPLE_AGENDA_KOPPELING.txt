@@ -1,0 +1,35 @@
+MEESTER MARTIJN APP – APPLE AGENDA KOPPELING
+
+Waarom deze koppeling?
+Een GitHub/PWA-webapp kan niet rechtstreeks het native Apple Agenda 'Nieuw agenda-item'-scherm openen.
+iOS Opdrachten kan dit wel en kan officieel via een shortcuts://-link vanuit een webpagina worden gestart.
+
+EENMALIG OP IPHONE
+
+1. Open de app Opdrachten.
+2. Maak een nieuwe opdracht.
+3. Geef hem exact deze naam:
+   Meester Martijn Agenda
+4. Zorg dat de opdracht tekst als invoer accepteert.
+5. Voeg 'Haal woordenboek op uit invoer' / 'Get Dictionary from Input' toe.
+6. De webapp stuurt een JSON-woordenboek met:
+   title
+   start
+   end
+   location
+   notes
+7. Haal deze vijf waarden uit het woordenboek.
+8. Voeg 'Voeg nieuwe gebeurtenis toe' / 'Add New Event' toe.
+9. Gebruik:
+   - title als titel
+   - start als begindatum/tijd
+   - end als einddatum/tijd
+   - location als locatie
+   - notes als notities
+10. Zet indien beschikbaar 'Toon opstelvenster' / 'Show Compose Sheet' AAN.
+11. Sla de opdracht op.
+
+Daarna:
+Meester Martijn App > Agenda > afspraak inspreken > Ja, het klopt > Open afspraak in Apple Agenda.
+
+De .ics-knop blijft beschikbaar als reserve.

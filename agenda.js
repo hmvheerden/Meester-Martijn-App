@@ -58,6 +58,22 @@ async function openAgendaFile(ev){
   toast('Agenda-bestand geopend. Kies Agenda om het item toe te voegen.');
 }
 
+
+function shortcutPayload(ev){
+  return JSON.stringify({
+    title:ev.title,
+    start:`${ev.date}T${ev.startTime||'08:00'}:00`,
+    end:`${ev.date}T${ev.endTime||addMinutes(ev.startTime||'08:00',15)}:00`,
+    location:ev.location||'',
+    notes:ev.notes||''
+  });
+}
+function runCalendarShortcut(ev){
+  const payload=shortcutPayload(ev);
+  const url=`shortcuts://run-shortcut?name=${encodeURIComponent('Meester Martijn Agenda')}&input=text&text=${encodeURIComponent(payload)}`;
+  location.href=url;
+}
+
 export async function renderAgenda(root){
   let event=null;
   root.innerHTML=`<div class="topbar"><div><div class="title">Agenda</div><div class="subtitle">Typ of spreek een afspraak in. AI maakt er een agenda-item van.</div></div></div>
@@ -85,8 +101,28 @@ export async function renderAgenda(root){
 
       <div id="agendaApproved" class="hidden" style="margin-top:14px">
         <div class="status"><span class="dot ok"></span> Afspraak goedgekeurd</div>
-        <button id="openAgenda" class="btn" style="margin-top:12px">Open in Apple Agenda</button>
-        <div class="muted" style="margin-top:10px">Op iPhone opent hiermee een .ics-agenda-item dat je met de standaard Agenda-app kunt toevoegen.</div>
+        <button id="openAgendaNative" class="btn" style="margin-top:12px">Open afspraak in Apple Agenda</button>
+        <button id="openAgendaFallback" class="btn secondary" style="margin-top:8px">Gebruik .ics als reserve</button>
+        <div class="muted" style="margin-top:10px">De eerste knop gebruikt de iPhone-opdracht “Meester Martijn Agenda” om het native agenda-scherm te openen. Dit hoeft maar één keer ingesteld te worden.</div>
+        <button id="showAgendaSetup" class="btn secondary small" style="margin-top:10px">Eenmalige Agenda-koppeling instellen</button>
+      </div>
+    </div>
+
+    <div id="agendaShortcutSetup" class="card hidden">
+      <div class="section-title">Eenmalig instellen op iPhone</div>
+      <p class="muted">Maak in de app Opdrachten een opdracht met exact de naam <strong>Meester Martijn Agenda</strong>. De webapp stuurt daarna de afspraak naar die opdracht.</p>
+      <ol class="setup-steps">
+        <li>Open <strong>Opdrachten</strong> en maak een nieuwe opdracht.</li>
+        <li>Noem hem exact <strong>Meester Martijn Agenda</strong>.</li>
+        <li>Voeg de actie <strong>Haal woordenboek op uit invoer</strong> / <strong>Get Dictionary from Input</strong> toe.</li>
+        <li>Lees uit dat woordenboek: <strong>title</strong>, <strong>start</strong>, <strong>end</strong>, <strong>location</strong> en <strong>notes</strong>.</li>
+        <li>Voeg de Agenda-actie <strong>Voeg nieuwe gebeurtenis toe</strong> / <strong>Add New Event</strong> toe.</li>
+        <li>Koppel titel, begin, einde, locatie en notities aan die waarden. Zet indien beschikbaar <strong>Toon opstelvenster / Show Compose Sheet</strong> aan, zodat je de afspraak ziet en zelf op Voeg toe drukt.</li>
+        <li>Sla de opdracht op. Daarna hoef je dit niet opnieuw te doen.</li>
+      </ol>
+      <div class="row">
+        <button id="openShortcutsApp" class="btn">Open Opdrachten</button>
+        <button id="closeAgendaSetup" class="btn secondary">Sluiten</button>
       </div>
     </div>
 
@@ -208,13 +244,32 @@ export async function renderAgenda(root){
     window.scrollTo({top:0,behavior:'smooth'});
   };
 
-  root.querySelector('#openAgenda').onclick=async()=>{
+  root.querySelector('#openAgendaNative').onclick=()=>{
+    const ev=syncEvent();
+    if(!ev.title)return toast('Vul een titel in.');
+    if(!ev.date)return toast('Vul een datum in.');
+    if(ev.allDay){
+      // De native Shortcut-koppeling gebruikt tijden; hele dag krijgt 08:00–08:15.
+      ev.allDay=false;ev.startTime=ev.startTime||'08:00';ev.endTime=ev.endTime||addMinutes(ev.startTime,15);
+    }
+    runCalendarShortcut(ev);
+  };
+
+  root.querySelector('#openAgendaFallback').onclick=async()=>{
     const ev=syncEvent();
     if(!ev.title)return toast('Vul een titel in.');
     if(!ev.date)return toast('Vul een datum in.');
     if(!ev.allDay&&(!ev.startTime||!ev.endTime))return toast('Vul begin- en eindtijd in.');
     await openAgendaFile(ev);
   };
+
+  const shortcutSetup=root.querySelector('#agendaShortcutSetup');
+  root.querySelector('#showAgendaSetup').onclick=()=>{
+    shortcutSetup.classList.remove('hidden');
+    setTimeout(()=>shortcutSetup.scrollIntoView({behavior:'smooth',block:'start'}),50);
+  };
+  root.querySelector('#closeAgendaSetup').onclick=()=>shortcutSetup.classList.add('hidden');
+  root.querySelector('#openShortcutsApp').onclick=()=>{location.href='shortcuts://';};
 
   root.querySelector('#recordAgenda').onclick=async()=>{
     const btn=root.querySelector('#recordAgenda'),state=root.querySelector('#agendaRecordState'),trans=root.querySelector('#agendaTranscript');

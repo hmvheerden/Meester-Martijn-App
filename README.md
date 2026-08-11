@@ -126,3 +126,10 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Keuzes: Ja, het klopt / Nee, opnieuw.
 - Pas na goedkeuring verschijnt Open in Apple Agenda.
 - Bij Nee kun je de herkende afspraak aanpassen of opnieuw typen/inspreken.
+
+## Versie 22
+- Apple Agenda gebruikt nu bij voorkeur een iOS Shortcut-koppeling.
+- De app start de opdracht `Meester Martijn Agenda` via het officiële `shortcuts://run-shortcut` URL-schema en stuurt titel, begin, einde, locatie en notities mee.
+- Hiermee kan de Shortcut de native Agenda-actie Add New Event gebruiken.
+- De oude .ics-methode blijft als reserve beschikbaar.
+- Zie APPLE_AGENDA_KOPPELING.txt voor de eenmalige iPhone-instelling.
