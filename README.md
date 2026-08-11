@@ -138,3 +138,9 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Shortcut-agenda probleem met datum/tijd hersteld.
 - De app stuurt start/eind nu als `YYYY-MM-DD HH:MM` plus losse date/startTime/endTime velden.
 - In de Shortcut moeten start en end eerst via `Haal datums op uit invoer` naar echte datumwaarden worden omgezet.
+
+## Versie 24
+- De zelfgemaakte Shortcut-koppeling is verwijderd.
+- Na goedkeuring deelt Agenda direct een .ics-bestand via het iOS-deelmenu.
+- Kies in het deelmenu `ICS To Calendar` om de afspraak aan Apple Agenda toe te voegen.
+- De eerdere regels voor standaardtijd en duur blijven behouden.

@@ -1,0 +1,16 @@
+MEESTER MARTIJN APP – AGENDA VIA ICS TO CALENDAR
+
+1. Maak of spreek een afspraak in op de pagina Agenda.
+2. Controleer de voorgestelde afspraak.
+3. Kies 'Ja, het klopt'.
+4. Tik 'Voeg toe via ICS To Calendar'.
+5. Het iOS-deelmenu opent met het .ics-bestand.
+6. Kies 'ICS To Calendar'.
+7. Voeg de afspraak toe aan Apple Agenda.
+
+De app stuurt titel, datum, begin- en eindtijd, locatie en notities mee in het .ics-bestand.
+
+Regels:
+- Geen tijd genoemd: 08:00.
+- Tijd genoemd, geen duur: 15 minuten.
+- Genoemde duur of eindtijd wordt overgenomen.
