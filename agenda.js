@@ -60,10 +60,15 @@ async function openAgendaFile(ev){
 
 
 function shortcutPayload(ev){
+  const startTime=ev.startTime||'08:00';
+  const endTime=ev.endTime||addMinutes(startTime,15);
   return JSON.stringify({
     title:ev.title,
-    start:`${ev.date}T${ev.startTime||'08:00'}:00`,
-    end:`${ev.date}T${ev.endTime||addMinutes(ev.startTime||'08:00',15)}:00`,
+    date:ev.date,
+    startTime,
+    endTime,
+    start:`${ev.date} ${startTime}`,
+    end:`${ev.date} ${endTime}`,
     location:ev.location||'',
     notes:ev.notes||''
   });
@@ -116,8 +121,9 @@ export async function renderAgenda(root){
         <li>Noem hem exact <strong>Meester Martijn Agenda</strong>.</li>
         <li>Voeg de actie <strong>Haal woordenboek op uit invoer</strong> / <strong>Get Dictionary from Input</strong> toe.</li>
         <li>Lees uit dat woordenboek: <strong>title</strong>, <strong>start</strong>, <strong>end</strong>, <strong>location</strong> en <strong>notes</strong>.</li>
-        <li>Voeg de Agenda-actie <strong>Voeg nieuwe gebeurtenis toe</strong> / <strong>Add New Event</strong> toe.</li>
-        <li>Koppel titel, begin, einde, locatie en notities aan die waarden. Zet indien beschikbaar <strong>Toon opstelvenster / Show Compose Sheet</strong> aan, zodat je de afspraak ziet en zelf op Voeg toe drukt.</li>
+        <li><strong>Belangrijk:</strong> zet <strong>start</strong> en <strong>end</strong> eerst om van tekst naar een echte datum met de Shortcuts-actie <strong>Haal datums op uit invoer</strong> / <strong>Get Dates from Input</strong>.</li>
+        <li>Voeg daarna de Agenda-actie <strong>Voeg nieuwe gebeurtenis toe</strong> / <strong>Add New Event</strong> toe.</li>
+        <li>Koppel Titel aan <strong>title</strong>, Begintijd aan de omgezette datum van <strong>start</strong>, Eindtijd aan de omgezette datum van <strong>end</strong>, Locatie aan <strong>location</strong> en Notities aan <strong>notes</strong>. Zet indien beschikbaar <strong>Toon opstelvenster / Show Compose Sheet</strong> aan.</li>
         <li>Sla de opdracht op. Daarna hoef je dit niet opnieuw te doen.</li>
       </ol>
       <div class="row">

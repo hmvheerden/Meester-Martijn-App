@@ -33,3 +33,25 @@ Daarna:
 Meester Martijn App > Agenda > afspraak inspreken > Ja, het klopt > Open afspraak in Apple Agenda.
 
 De .ics-knop blijft beschikbaar als reserve.
+
+
+BELANGRIJKE CORRECTIE VOOR DATUM/TIJD
+
+De waarden `start` en `end` komen vanuit de webapp als tekst binnen.
+Koppel die NIET rechtstreeks aan de Agenda-actie.
+
+Doe dit:
+1. Na 'Haal waarde op voor start in Woordenboek':
+   voeg 'Haal datums op uit invoer' / 'Get Dates from Input' toe.
+   Gebruik de uitkomst van start als invoer.
+2. Na 'Haal waarde op voor end in Woordenboek':
+   voeg opnieuw 'Haal datums op uit invoer' toe.
+   Gebruik de uitkomst van end als invoer.
+3. Koppel in 'Nieuwe activiteit':
+   - Titel -> title
+   - Begintijd -> resultaat van 'Haal datums op uit invoer' voor start
+   - Eindtijd -> resultaat van 'Haal datums op uit invoer' voor end
+   - Locatie -> location
+   - Notities -> notes
+
+Hierdoor gebruikt Agenda de bedoelde datum en tijd in plaats van vandaag/nu.

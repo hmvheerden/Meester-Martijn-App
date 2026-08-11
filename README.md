@@ -133,3 +133,8 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Hiermee kan de Shortcut de native Agenda-actie Add New Event gebruiken.
 - De oude .ics-methode blijft als reserve beschikbaar.
 - Zie APPLE_AGENDA_KOPPELING.txt voor de eenmalige iPhone-instelling.
+
+## Versie 23
+- Shortcut-agenda probleem met datum/tijd hersteld.
+- De app stuurt start/eind nu als `YYYY-MM-DD HH:MM` plus losse date/startTime/endTime velden.
+- In de Shortcut moeten start en end eerst via `Haal datums op uit invoer` naar echte datumwaarden worden omgezet.
