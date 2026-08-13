@@ -1,10 +1,10 @@
 import {settings} from './storage.js';
 
 const OPENAI_BASE='https://api.openai.com/v1';
-const GEMINI_BASE='https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_INTERACTIONS='https://generativelanguage.googleapis.com/v1beta/interactions';
 const DEFAULT_TEXT_MODEL='gpt-5.4-mini';
 const DEFAULT_TRANSCRIBE_MODEL='gpt-4o-mini-transcribe';
-const DEFAULT_GEMINI_MODEL='gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL='gemini-3.6-flash';
 
 function provider(){return String(settings.get('aiProvider','openai')||'openai')}
 function apiKey(){return String(settings.get('openaiKey','')).trim()}
@@ -24,75 +24,87 @@ function bytesToBase64(bytes){
   for(let i=0;i<bytes.length;i+=chunk)out+=String.fromCharCode(...bytes.subarray(i,i+chunk));
   return btoa(out);
 }
-function geminiText(data){
-  return (data?.candidates?.[0]?.content?.parts||[]).map(p=>p?.text||'').join('').trim();
-}
-function toGeminiContents(messages=[]){
-  const system=[];
-  const contents=[];
-  for(const m of messages){
-    if(m.role==='system'){system.push(String(m.content||''));continue}
-    const role=m.role==='assistant'?'model':'user';
-    const text=String(m.content||'');
-    if(contents.length&&contents[contents.length-1].role===role){
-      contents[contents.length-1].parts.push({text});
-    }else contents.push({role,parts:[{text}]});
+function interactionText(data){
+  if(typeof data?.output_text==='string'&&data.output_text.trim())return data.output_text.trim();
+  const parts=[];
+  for(const step of data?.steps||[]){
+    const content=step?.content;
+    if(Array.isArray(content)){
+      for(const block of content)if(block?.type==='text'&&block?.text)parts.push(block.text);
+    }else if(content?.type==='text'&&content?.text)parts.push(content.text);
   }
-  return {system:system.join('\n\n'),contents};
+  return parts.join('').trim();
 }
-async function geminiGenerate({messages=[],json=false}={}){
+function flattenGeminiMessages(messages=[]){
+  const system=[];
+  const lines=[];
+  for(const m of messages){
+    const role=String(m.role||'user');
+    const text=String(m.content||'');
+    if(role==='system')system.push(text);
+    else lines.push(`${role==='assistant'?'Assistent':'Gebruiker'}:\n${text}`);
+  }
+  return {system:system.join('\n\n'),input:lines.join('\n\n')||'Antwoord met OK'};
+}
+async function geminiInteraction({messages=[],json=false,input=null,systemInstruction=''}={}){
   const key=requireGeminiKey(),model=geminiModel();
-  const {system,contents}=toGeminiContents(messages);
-  const body={contents:contents.length?contents:[{role:'user',parts:[{text:'Antwoord met OK'}]}]};
-  if(system)body.systemInstruction={parts:[{text:system}]};
-  if(json)body.generationConfig={responseMimeType:'application/json'};
-  const response=await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`,{
+  const flattened=flattenGeminiMessages(messages);
+  const body={
+    model,
+    input:input ?? flattened.input
+  };
+  const sys=[flattened.system,systemInstruction].filter(Boolean).join('\n\n');
+  if(sys)body.system_instruction=sys;
+  if(json)body.response_format={type:'text',mime_type:'application/json'};
+
+  const response=await fetch(GEMINI_INTERACTIONS,{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    headers:{
+      'Content-Type':'application/json',
+      'x-goog-api-key':key
+    },
     body:JSON.stringify(body)
   });
   const data=await response.json().catch(()=>({}));
   if(!response.ok){
     const msg=data?.error?.message||`Gemini gaf foutcode ${response.status}.`;
-    const e=new Error(`Gemini-fout ${response.status}: ${msg}`);e.status=response.status;throw e;
+    const e=new Error(`Gemini-fout ${response.status}: ${msg}`);
+    e.status=response.status;
+    throw e;
   }
-  const text=geminiText(data);
+  const text=interactionText(data);
   if(!text)throw new Error('Gemini gaf geen tekst terug.');
-  return {choices:[{message:{content:text}}],_provider:'gemini',_model:model};
+  return {choices:[{message:{content:text}}],_provider:'gemini',_model:model,_raw:data};
 }
 async function geminiTranscribe(formData){
-  const key=requireGeminiKey(),model=geminiModel();
   const file=formData?.get?.('file');
   if(!file||typeof file.arrayBuffer!=='function')throw new Error('Geen audio-opname gevonden.');
+
   const bytes=new Uint8Array(await file.arrayBuffer());
   if(bytes.byteLength>20*1024*1024)throw new Error('De audio-opname is te groot voor directe Gemini-transcriptie.');
-  const mime=file.type||'audio/webm';
-  const body={
-    contents:[{role:'user',parts:[
-      {text:'Transcribeer deze Nederlandse spraakopname nauwkeurig. Geef uitsluitend de gesproken tekst terug, zonder uitleg, tijdcodes of aanhalingstekens. Let extra op gespelde namen en expliciete aanwijzingen over schrijfwijze.'},
-      {inlineData:{mimeType:mime,data:bytesToBase64(bytes)}}
-    ]}]
-  };
-  const response=await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-goog-api-key':key},
-    body:JSON.stringify(body)
-  });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok){
-    const msg=data?.error?.message||`Gemini gaf foutcode ${response.status}.`;
-    throw new Error(`Gemini-transcriptie mislukt: ${msg}`);
-  }
-  const text=geminiText(data);
+
+  let mime=file.type||'audio/m4a';
+  // Interactions ondersteunt o.a. M4A, MP3, OGG en WAV.
+  // Op iPhone gebruikt de app normaal audio/mp4; dat behandelen we als M4A.
+  if(mime.startsWith('audio/mp4'))mime='audio/m4a';
+  else if(mime.startsWith('audio/webm'))mime='audio/ogg';
+
+  const input=[
+    {type:'text',text:'Transcribeer deze Nederlandse spraakopname nauwkeurig. Geef uitsluitend de gesproken tekst terug, zonder uitleg, tijdcodes of aanhalingstekens. Let extra op gespelde namen en expliciete aanwijzingen over schrijfwijze.'},
+    {type:'audio',data:bytesToBase64(bytes),mime_type:mime}
+  ];
+  const result=await geminiInteraction({input});
+  const text=assistantText(result).trim();
   if(!text)throw new Error('Gemini herkende geen spraak.');
   return {text};
 }
+
 async function openai(path,options={}){
   if(provider()==='gemini'){
     if(path==='/audio/transcriptions')return geminiTranscribe(options.body);
     if(path==='/chat/completions'){
       let payload={};try{payload=JSON.parse(options.body||'{}')}catch{}
-      return geminiGenerate({messages:payload.messages||[],json:payload?.response_format?.type==='json_object'});
+      return geminiInteraction({messages:payload.messages||[],json:payload?.response_format?.type==='json_object'});
     }
     throw new Error('Deze AI-functie wordt nog niet ondersteund door Gemini.');
   }
@@ -121,7 +133,7 @@ const mailInstructions=`Je helpt een Nederlandse basisschoolleerkracht met e-mai
 export async function testConnection(){
  try{
    if(provider()==='gemini'){
-     const data=await geminiGenerate({messages:[{role:'user',content:'Antwoord uitsluitend met: OK'}]});
+     const data=await geminiInteraction({messages:[{role:'user',content:'Antwoord uitsluitend met: OK'}]});
      return {ok:Boolean(assistantText(data)),model:geminiModel(),provider:'gemini',credit:true};
    }
    const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'user',content:'Antwoord uitsluitend met: OK'}],max_completion_tokens:8})});

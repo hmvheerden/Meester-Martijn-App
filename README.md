@@ -212,3 +212,12 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - De thema-keuze is uit Instellingen verwijderd.
 - Nieuwe hoofdmenuvolgorde: Home, To Do, Agenda, Mail, Notities, Klas, Reflectie.
 - Alle bestaande functies uit v32 zijn behouden.
+
+## Versie 34 – Gemini Interactions API
+- Gemini gebruikt nu de nieuwe Google Interactions API (`/v1beta/interactions`).
+- Standaardmodel is `gemini-3.6-flash`, conform de actuele Google-voorbeelden.
+- Bestaande Gemini API-key blijft bruikbaar; er is geen nieuwe key nodig vanwege deze modelmigratie.
+- Oude opgeslagen waarden `gemini-2.5-flash` en `gemini-3.5-flash` worden automatisch naar `gemini-3.6-flash` gemigreerd.
+- JSON-output voor Agenda, Mail en andere gestructureerde AI-functies gebruikt `response_format` met `application/json`.
+- Spraaktranscriptie via Gemini gebruikt multimodale audio-input via de Interactions API.
+- OpenAI blijft als alternatief volledig beschikbaar.

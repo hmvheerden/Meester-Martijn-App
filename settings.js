@@ -19,7 +19,7 @@ export async function renderSettings(root){
 
    <div id="geminiSettings" class="hidden">
      <div class="field"><label>Gemini API-key</label><div class="row"><input id="geminiKey" class="input grow" type="password" autocomplete="off" value="${esc(settings.get('geminiKey',''))}" placeholder="Google AI Studio API-key"><button id="toggleGeminiKey" class="btn secondary small" type="button">Tonen</button></div></div>
-     <div class="field"><label>Gemini-model</label><input id="geminiModel" class="input" value="${esc(settings.get('geminiModel','gemini-2.5-flash'))}" placeholder="gemini-2.5-flash"></div>
+     <div class="field"><label>Gemini-model</label><input id="geminiModel" class="input" value="${esc(settings.get('geminiModel','gemini-3.6-flash'))}" placeholder="gemini-3.6-flash"></div>
    </div>
 
    <div id="aiStatus" class="status"><span class="dot"></span> Niet getest</div>
@@ -35,6 +35,10 @@ export async function renderSettings(root){
  const geminiKeyInput=root.querySelector('#geminiKey');
  const geminiModelInput=root.querySelector('#geminiModel');
  let aiProvider=settings.get('aiProvider','openai');
+ if(['gemini-2.5-flash','gemini-3.5-flash'].includes(String(settings.get('geminiModel','')))){
+   settings.set('geminiModel','gemini-3.6-flash');
+   geminiModelInput.value='gemini-3.6-flash';
+ }
 
  function drawProvider(){
    root.querySelectorAll('[data-provider]').forEach(b=>b.classList.toggle('active',b.dataset.provider===aiProvider));
@@ -49,7 +53,7 @@ export async function renderSettings(root){
    settings.set('aiProvider',aiProvider);
    settings.set('openaiKey',openaiKeyInput.value.trim());
    settings.set('geminiKey',geminiKeyInput.value.trim());
-   settings.set('geminiModel',geminiModelInput.value.trim()||'gemini-2.5-flash');
+   settings.set('geminiModel',geminiModelInput.value.trim()||'gemini-3.6-flash');
    toast(`${aiProvider==='gemini'?'Gemini':'OpenAI'}-instellingen lokaal opgeslagen`);
  };
 
@@ -76,7 +80,7 @@ export async function renderSettings(root){
    settings.set('aiProvider',aiProvider);
    settings.set('openaiKey',openaiKeyInput.value.trim());
    settings.set('geminiKey',geminiKeyInput.value.trim());
-   settings.set('geminiModel',geminiModelInput.value.trim()||'gemini-2.5-flash');
+   settings.set('geminiModel',geminiModelInput.value.trim()||'gemini-3.6-flash');
    const st=root.querySelector('#aiStatus');
    try{
      st.innerHTML='<span class="dot"></span> Verbinding testen…';
