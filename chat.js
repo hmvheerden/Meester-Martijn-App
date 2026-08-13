@@ -25,7 +25,7 @@ function mailText(text,subject='Meesterassistent'){
 
 export async function renderAIChat(root){
   root.classList.add('home-chat-page');
-  root.innerHTML=`<div class="topbar home-chat-topbar"><div><div class="title">Meesterassistent</div><div class="subtitle">Typ of spreek. Elk AI-antwoord kun je apart mailen of delen.</div></div><div class="row"><button id="quickPlanning" class="btn secondary small">⚡ Snelle invoer</button><button id="newChat" class="btn secondary small">Nieuwe chat</button></div></div>
+  root.innerHTML=`<div class="topbar home-chat-topbar"><div><div class="title">Meesterassistent</div><div class="subtitle">Typ of spreek. Elk AI-antwoord kun je apart mailen of delen.</div></div><button id="newChat" class="btn secondary small">Nieuwe chat</button></div>
   <div class="card ai-chat-card fullscreen-chat-card">
     <div id="aiChatHistory" class="chat home-chat"></div>
     <div id="chatSpeechState" class="muted" style="margin-bottom:8px"></div>
@@ -96,7 +96,6 @@ export async function renderAIChat(root){
 
   send.onclick=()=>ask(input.value);
   input.onkeydown=e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')ask(input.value)};
-  root.querySelector('#quickPlanning').onclick=()=>{location.hash='today'};
   root.querySelector('#newChat').onclick=()=>{history=[];speech.textContent='';draw()};
   root.querySelector('#mailSelection').onclick=()=>{
     const selected=String(window.getSelection?.()||'').trim();

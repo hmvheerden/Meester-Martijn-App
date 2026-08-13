@@ -1,9 +1,8 @@
 const app=document.getElementById('app');
 let page='home';
-const navItems=[['home','⌂','Home'],['today','☀️','Vandaag'],['agenda','📅','Agenda'],['todos','✓','To Do'],['notes','📝','Notities'],['mail','✉️','Mail'],['class','👥','Klas'],['reflection','💭','Reflectie']];
+const navItems=[['home','⌂','Home'],['todos','✓','To Do'],['agenda','📅','Agenda'],['mail','✉️','Mail'],['notes','📝','Notities'],['class','👥','Klas'],['reflection','💭','Reflectie']];
 const loaders={
  home:()=>import('./chat.js').then(m=>m.renderAIChat),
- today:()=>import('./today.js').then(m=>m.renderToday),
  todos:()=>import('./todos.js').then(m=>m.renderTodos),
  notes:()=>import('./notes.js').then(m=>m.renderNotes),
  mail:()=>import('./mail.js').then(m=>m.renderMail),
@@ -44,5 +43,5 @@ function loading(root){root.innerHTML='<div class="card"><div class="muted">Pagi
 function errorPage(root,e){console.error(e);root.innerHTML=`<div class="card"><div class="section-title">Deze pagina kon niet worden geladen</div><div class="muted">${String(e?.message||e||'Onbekende fout')}</div><div class="row" style="margin-top:12px"><button class="btn" id="retryPage">Opnieuw proberen</button><button class="btn secondary" id="goHome">Home</button></div></div>`;root.querySelector('#retryPage').onclick=()=>navigate(page);root.querySelector('#goHome').onclick=()=>navigate('home');}
 async function navigate(to){page=to||'home';try{history.replaceState(null,'',`#${page}`)}catch{}shell();const root=app.querySelector('#page');loading(root);try{if(page==='class')renderClass(root);else if(loaders[page]){const render=await loaders[page]();await render(root)}else{page='home';const render=await loaders.home();await render(root)}}catch(e){errorPage(root,e)}markNav();window.scrollTo(0,0);}
 window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)||'home'));
-if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=31');await reg.update?.()}catch(e){console.warn(e)}});
+if('serviceWorker' in navigator)window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=33');await reg.update?.()}catch(e){console.warn(e)}});
 shell();document.getElementById('page').innerHTML='<div class="card"><strong>Meester Martijn App</strong><div class="muted" style="margin-top:6px">App wordt geladen…</div></div>';navigate(location.hash.slice(1)||'home');

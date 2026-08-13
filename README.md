@@ -198,3 +198,17 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Onderwerp: `afspraak toevoegen`.
 - Het `.ics`-bestand wordt via het iOS-deelmenu als bijlage aan Mail doorgegeven.
 - iOS laat een gewone webapp niet tegelijk het native Aan:-veld en een lokale bijlage afdwingen; als Aan leeg blijft hoeft alleen het al gekopieerde adres geplakt te worden.
+
+## Versie 32
+- De pagina `Vandaag` is uit de hoofdnavigatie verwijderd.
+- `Snelle invoer` is van Home verwijderd.
+- Home blijft de bestaande Meesterassistent/chat.
+- Agenda, To Do, Notities, Mail, Klas, Reflectie en alle bestaande opties blijven behouden.
+- De agenda-opties voor ICS / ICS To Calendar / `Mail afspraak (.ics)` uit v31 blijven behouden.
+- Onderliggende plannerdata en bestaande To Do-opties zijn niet verwijderd, zodat bestaande opgeslagen gegevens behouden blijven.
+
+## Versie 33
+- De app gebruikt voortaan altijd de lichte weergave, ook als de iPhone zelf op donker staat.
+- De thema-keuze is uit Instellingen verwijderd.
+- Nieuwe hoofdmenuvolgorde: Home, To Do, Agenda, Mail, Notities, Klas, Reflectie.
+- Alle bestaande functies uit v32 zijn behouden.
