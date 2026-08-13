@@ -92,7 +92,8 @@ export async function renderAgenda(root){
       <div id="agendaApproved" class="hidden" style="margin-top:14px">
         <div class="status"><span class="dot ok"></span> Afspraak goedgekeurd</div>
         <button id="shareAgendaICS" class="btn" style="margin-top:12px">Voeg toe via ICS To Calendar</button>
-        <div class="muted" style="margin-top:10px">De app opent het iOS-deelmenu met het .ics-bestand. Kies daar <strong>ICS To Calendar</strong> en voeg daarna de afspraak toe aan Apple Agenda.</div>
+        <button id="mailAgendaICS" class="btn secondary" style="margin-top:8px">Mail afspraak (.ics)</button>
+        <div class="muted" style="margin-top:10px">De app opent het iOS-deelmenu met het .ics-bestand. Kies daar <strong>ICS To Calendar</strong> om toe te voegen aan Agenda, of <strong>Mail</strong> om het bestand als bijlage te versturen.</div>
       </div>
     </div>
 
@@ -249,6 +250,34 @@ ${t.text}`;
   };
 
 
+
+  root.querySelector('#mailAgendaICS').onclick=async()=>{
+    const ev=syncEvent();
+    if(!ev.title)return toast('Vul een titel in.');
+    if(!ev.date)return toast('Vul een datum in.');
+    if(!ev.allDay&&(!ev.startTime||!ev.endTime))return toast('Vul begin- en eindtijd in.');
+
+    const to=String(settings.get('email','')||'').trim();
+    if(!to)return toast('Vul eerst je e-mailadres in bij Instellingen.');
+
+    const file=new File([makeICS(ev)],`${ev.title||'Agenda-item'}.ics`,{type:'text/calendar;charset=utf-8'});
+    const subject='afspraak toevoegen';
+
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      try{
+        await navigator.share({
+          title:subject,
+          text:`Aan: ${to}\nOnderwerp: ${subject}`,
+          files:[file]
+        });
+        return;
+      }catch(e){
+        if(e?.name==='AbortError')return;
+      }
+    }
+
+    location.href=`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}`;
+  };
 
   root.querySelector('#shareAgendaICS').onclick=async()=>{
     const ev=syncEvent();

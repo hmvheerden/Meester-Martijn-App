@@ -1,25 +1,115 @@
 import {settings} from './storage.js';
+
 const OPENAI_BASE='https://api.openai.com/v1';
+const GEMINI_BASE='https://generativelanguage.googleapis.com/v1beta';
 const DEFAULT_TEXT_MODEL='gpt-5.4-mini';
 const DEFAULT_TRANSCRIBE_MODEL='gpt-4o-mini-transcribe';
-function apiKey(){return String(settings.get('openaiKey','')).trim()}
-function textModel(){return String(settings.get('openaiModel',DEFAULT_TEXT_MODEL)).trim()||DEFAULT_TEXT_MODEL}
-function requireKey(){const key=apiKey();if(!key)throw new Error('Vul eerst je OpenAI API-key in bij Instellingen.');return key}
+const DEFAULT_GEMINI_MODEL='gemini-2.5-flash';
 
+function provider(){return String(settings.get('aiProvider','openai')||'openai')}
+function apiKey(){return String(settings.get('openaiKey','')).trim()}
+function geminiKey(){return String(settings.get('geminiKey','')).trim()}
+function textModel(){return String(settings.get('openaiModel',DEFAULT_TEXT_MODEL)).trim()||DEFAULT_TEXT_MODEL}
+function geminiModel(){return String(settings.get('geminiModel',DEFAULT_GEMINI_MODEL)).trim()||DEFAULT_GEMINI_MODEL}
+function activeModel(){return provider()==='gemini'?geminiModel():textModel()}
+
+function requireOpenAIKey(){
+  const key=apiKey();if(!key)throw new Error('Vul eerst je OpenAI API-key in bij Instellingen.');return key;
+}
+function requireGeminiKey(){
+  const key=geminiKey();if(!key)throw new Error('Vul eerst je Gemini API-key in bij Instellingen.');return key;
+}
+function bytesToBase64(bytes){
+  let out='',chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)out+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(out);
+}
+function geminiText(data){
+  return (data?.candidates?.[0]?.content?.parts||[]).map(p=>p?.text||'').join('').trim();
+}
+function toGeminiContents(messages=[]){
+  const system=[];
+  const contents=[];
+  for(const m of messages){
+    if(m.role==='system'){system.push(String(m.content||''));continue}
+    const role=m.role==='assistant'?'model':'user';
+    const text=String(m.content||'');
+    if(contents.length&&contents[contents.length-1].role===role){
+      contents[contents.length-1].parts.push({text});
+    }else contents.push({role,parts:[{text}]});
+  }
+  return {system:system.join('\n\n'),contents};
+}
+async function geminiGenerate({messages=[],json=false}={}){
+  const key=requireGeminiKey(),model=geminiModel();
+  const {system,contents}=toGeminiContents(messages);
+  const body={contents:contents.length?contents:[{role:'user',parts:[{text:'Antwoord met OK'}]}]};
+  if(system)body.systemInstruction={parts:[{text:system}]};
+  if(json)body.generationConfig={responseMimeType:'application/json'};
+  const response=await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify(body)
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){
+    const msg=data?.error?.message||`Gemini gaf foutcode ${response.status}.`;
+    const e=new Error(`Gemini-fout ${response.status}: ${msg}`);e.status=response.status;throw e;
+  }
+  const text=geminiText(data);
+  if(!text)throw new Error('Gemini gaf geen tekst terug.');
+  return {choices:[{message:{content:text}}],_provider:'gemini',_model:model};
+}
+async function geminiTranscribe(formData){
+  const key=requireGeminiKey(),model=geminiModel();
+  const file=formData?.get?.('file');
+  if(!file||typeof file.arrayBuffer!=='function')throw new Error('Geen audio-opname gevonden.');
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  if(bytes.byteLength>20*1024*1024)throw new Error('De audio-opname is te groot voor directe Gemini-transcriptie.');
+  const mime=file.type||'audio/webm';
+  const body={
+    contents:[{role:'user',parts:[
+      {text:'Transcribeer deze Nederlandse spraakopname nauwkeurig. Geef uitsluitend de gesproken tekst terug, zonder uitleg, tijdcodes of aanhalingstekens. Let extra op gespelde namen en expliciete aanwijzingen over schrijfwijze.'},
+      {inlineData:{mimeType:mime,data:bytesToBase64(bytes)}}
+    ]}]
+  };
+  const response=await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify(body)
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){
+    const msg=data?.error?.message||`Gemini gaf foutcode ${response.status}.`;
+    throw new Error(`Gemini-transcriptie mislukt: ${msg}`);
+  }
+  const text=geminiText(data);
+  if(!text)throw new Error('Gemini herkende geen spraak.');
+  return {text};
+}
 async function openai(path,options={}){
- const key=requireKey(),headers=new Headers(options.headers||{});headers.set('Authorization',`Bearer ${key}`);
- const response=await fetch(`${OPENAI_BASE}${path}`,{...options,headers});
- const data=await response.json().catch(()=>({}));
- if(!response.ok){
-   const err=data?.error||{},msg=typeof err?.message==='string'?err.message:`OpenAI gaf foutcode ${response.status}.`,code=err?.code||err?.type||'';
-   const e=new Error(msg);e.status=response.status;e.code=code;e.openaiMessage=msg;
-   if(response.status===401)e.message='De OpenAI API-key wordt niet geaccepteerd.';
-   else if(response.status===429&&['credit_balance_exhausted','insufficient_quota'].includes(code))e.message='API-key geldig, maar OpenAI meldt dat er geen API-tegoed beschikbaar is voor dit account/project.';
-   else if(response.status===429&&code==='rate_limit_exceeded')e.message='Te veel API-verzoeken in korte tijd. Probeer het over een moment opnieuw.';
-   else e.message=`OpenAI-fout ${response.status}${code?` · ${code}`:''}: ${msg}`;
-   throw e;
- }
- return data;
+  if(provider()==='gemini'){
+    if(path==='/audio/transcriptions')return geminiTranscribe(options.body);
+    if(path==='/chat/completions'){
+      let payload={};try{payload=JSON.parse(options.body||'{}')}catch{}
+      return geminiGenerate({messages:payload.messages||[],json:payload?.response_format?.type==='json_object'});
+    }
+    throw new Error('Deze AI-functie wordt nog niet ondersteund door Gemini.');
+  }
+
+  const key=requireOpenAIKey(),headers=new Headers(options.headers||{});headers.set('Authorization',`Bearer ${key}`);
+  const response=await fetch(`${OPENAI_BASE}${path}`,{...options,headers});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){
+    const err=data?.error||{},msg=typeof err?.message==='string'?err.message:`OpenAI gaf foutcode ${response.status}.`,code=err?.code||err?.type||'';
+    const e=new Error(msg);e.status=response.status;e.code=code;e.openaiMessage=msg;
+    if(response.status===401)e.message='De OpenAI API-key wordt niet geaccepteerd.';
+    else if(response.status===429&&['credit_balance_exhausted','insufficient_quota'].includes(code))e.message='API-key geldig, maar OpenAI meldt dat er geen API-tegoed beschikbaar is voor dit account/project.';
+    else if(response.status===429&&code==='rate_limit_exceeded')e.message='Te veel API-verzoeken in korte tijd. Probeer het over een moment opnieuw.';
+    else e.message=`OpenAI-fout ${response.status}${code?` · ${code}`:''}: ${msg}`;
+    throw e;
+  }
+  return data;
 }
 function assistantText(data){return data?.choices?.[0]?.message?.content?.trim?.()||''}
 function stripMailClosing(body){
@@ -30,10 +120,14 @@ const mailInstructions=`Je helpt een Nederlandse basisschoolleerkracht met e-mai
 
 export async function testConnection(){
  try{
+   if(provider()==='gemini'){
+     const data=await geminiGenerate({messages:[{role:'user',content:'Antwoord uitsluitend met: OK'}]});
+     return {ok:Boolean(assistantText(data)),model:geminiModel(),provider:'gemini',credit:true};
+   }
    const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'user',content:'Antwoord uitsluitend met: OK'}],max_completion_tokens:8})});
-   return {ok:Boolean(assistantText(data)),model:textModel(),credit:true};
+   return {ok:Boolean(assistantText(data)),model:textModel(),provider:'openai',credit:true};
  }catch(e){
-   if(e.status===429&&['credit_balance_exhausted','insufficient_quota'].includes(e.code))return {ok:true,model:textModel(),credit:false,warning:e.message};
+   if(provider()==='openai'&&e.status===429&&['credit_balance_exhausted','insufficient_quota'].includes(e.code))return {ok:true,model:textModel(),provider:'openai',credit:false,warning:e.message};
    throw e;
  }
 }

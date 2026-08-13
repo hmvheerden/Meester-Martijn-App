@@ -199,3 +199,6 @@
 .overdue-card{border-color:var(--danger)}
 .overdue-text{color:var(--danger);font-weight:750}
 @media(min-width:650px){.planner-columns{grid-template-columns:1fr 1fr}}
+
+/* v29: AI provider */
+.ai-provider{grid-template-columns:1fr 1fr}

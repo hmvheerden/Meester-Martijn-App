@@ -176,3 +176,18 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Reflectie kan met AI concrete vervolgacties eruit halen en die afzonderlijk naar To Do sturen.
 - Inbox-items kunnen handmatig of met AI naar To Do, Notities of Agenda worden verwerkt.
 - `Zoek door alles` zoekt in To Do, Notities, Reflecties, Feedback, Agenda, Checklists, Inbox, Soundboards, opgeslagen groepjes en Punten.
+
+## Versie 29 – Gemini als alternatief voor OpenAI
+- Instellingen heeft nu een AI-providerkeuze: OpenAI of Gemini.
+- Gemini API-key kan apart lokaal worden opgeslagen.
+- Standaard Gemini-model: `gemini-2.5-flash`.
+- Chat, Mail, To Do, Notities, Reflectie, Feedback, Agenda en plannings-AI gebruiken automatisch de gekozen provider.
+- Spraakopnames kunnen bij Gemini rechtstreeks als audio naar Gemini worden gestuurd voor transcriptie.
+- OpenAI-instellingen blijven behouden; wisselen van provider verwijdert geen keys.
+
+## Versie 30
+- Agenda heeft nu `Mail afspraak (.ics)`.
+- De knop maakt het huidige agenda-item als `.ics`-bestand en opent het iOS-deelmenu.
+- Het ingestelde e-mailadres wordt meegenomen in de deeltekst en het onderwerp is vast `afspraak toevoegen`.
+- iOS laat een webapp niet tegelijk een lokale bijlage toevoegen én het ontvanger-veld van Mail gegarandeerd vooraf invullen.
+- Als delen met bestand niet beschikbaar is, opent de app Mail met het ingestelde e-mailadres en onderwerp.
