@@ -93,7 +93,7 @@ export async function renderAgenda(root){
         <div class="status"><span class="dot ok"></span> Afspraak goedgekeurd</div>
         <button id="shareAgendaICS" class="btn" style="margin-top:12px">Voeg toe via ICS To Calendar</button>
         <button id="mailAgendaICS" class="btn secondary" style="margin-top:8px">Mail afspraak (.ics)</button>
-        <div class="muted" style="margin-top:10px">De app opent het iOS-deelmenu met het .ics-bestand. Kies daar <strong>ICS To Calendar</strong> om toe te voegen aan Agenda, of <strong>Mail</strong> om het bestand als bijlage te versturen.</div>
+        <div class="muted" style="margin-top:10px">Bij <strong>Mail afspraak (.ics)</strong> wordt je e-mailadres uit Instellingen automatisch gekopieerd, het onderwerp is <strong>afspraak toevoegen</strong> en het .ics-bestand gaat mee als bijlage via het iOS-deelmenu. Kies daar Mail. Als iOS het Aan:-veld leeg laat, kun je het gekopieerde adres direct plakken.</div>
       </div>
     </div>
 
@@ -260,14 +260,25 @@ ${t.text}`;
     const to=String(settings.get('email','')||'').trim();
     if(!to)return toast('Vul eerst je e-mailadres in bij Instellingen.');
 
-    const file=new File([makeICS(ev)],`${ev.title||'Agenda-item'}.ics`,{type:'text/calendar;charset=utf-8'});
     const subject='afspraak toevoegen';
+    const file=new File(
+      [makeICS(ev)],
+      `${ev.title||'Agenda-item'}.ics`,
+      {type:'text/calendar;charset=utf-8'}
+    );
+
+    // iOS kan via Web Share een lokale bijlage aan Mail doorgeven,
+    // maar laat webapps het native Aan:-veld niet afdwingen.
+    // Daarom zetten we het ingestelde adres alvast op het klembord.
+    try{
+      await navigator.clipboard.writeText(to);
+    }catch{}
 
     if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
       try{
         await navigator.share({
           title:subject,
-          text:`Aan: ${to}\nOnderwerp: ${subject}`,
+          text:`afspraak toevoegen`,
           files:[file]
         });
         return;
@@ -276,6 +287,8 @@ ${t.text}`;
       }
     }
 
+    // Fallback zonder Web Share: Mail opent met Aan + onderwerp.
+    // In deze fallback kan een browser de lokale .ics-bijlage niet automatisch meesturen.
     location.href=`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}`;
   };
 

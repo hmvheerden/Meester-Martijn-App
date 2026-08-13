@@ -191,3 +191,10 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Het ingestelde e-mailadres wordt meegenomen in de deeltekst en het onderwerp is vast `afspraak toevoegen`.
 - iOS laat een webapp niet tegelijk een lokale bijlage toevoegen én het ontvanger-veld van Mail gegarandeerd vooraf invullen.
 - Als delen met bestand niet beschikbaar is, opent de app Mail met het ingestelde e-mailadres en onderwerp.
+
+## Versie 31
+- `Mail afspraak (.ics)` gebruikt het e-mailadres uit Instellingen.
+- Het e-mailadres wordt bij klikken automatisch naar het klembord gekopieerd.
+- Onderwerp: `afspraak toevoegen`.
+- Het `.ics`-bestand wordt via het iOS-deelmenu als bijlage aan Mail doorgegeven.
+- iOS laat een gewone webapp niet tegelijk het native Aan:-veld en een lokale bijlage afdwingen; als Aan leeg blijft hoeft alleen het al gekopieerde adres geplakt te worden.
