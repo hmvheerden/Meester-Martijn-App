@@ -236,3 +236,14 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
   Home, Klas, To Do, Agenda, Mail, Notities, Reflectie.
 - Absenties invoeren blijft onder Klas beschikbaar.
 - Alle overige functies uit v35 blijven behouden.
+
+
+## Versie 37
+- Hoofdmenu is nu: Home, Class, Mail, Agenda, To Do.
+- Reflectie staat niet meer in het hoofdmenu en is verplaatst naar Class.
+- Absenties invoeren gebruikt geen aanwezigheidsknop meer.
+- Per leerling staat direct een vinkje `Absent`.
+- Na aanvinken kies je Geoorloofd absent of Ongeoorloofd absent.
+- Je kiest Ochtend, Middag of Hele dag.
+- Er is optioneel ruimte voor een reden.
+- Het overzicht bevat alleen leerlingen die als absent zijn aangevinkt.

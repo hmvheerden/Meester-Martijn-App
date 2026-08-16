@@ -27,7 +27,7 @@ export async function renderAbsences(root){
 
   root.innerHTML=`<div class="topbar"><div>
     <div class="title">Absenties invoeren</div>
-    <div class="subtitle">Vink per leerling ochtend, middag of hele dag afwezig aan.</div>
+    <div class="subtitle">Vink alleen leerlingen aan die absent zijn.</div>
   </div></div>
 
   <div class="card">
@@ -39,18 +39,42 @@ export async function renderAbsences(root){
     ${students.length?`
       <div class="section-title">Leerlingen</div>
       <div id="absenceStudents" class="absence-list">
-        ${students.map((name,i)=>`<div class="absence-row">
-          <div class="absence-name">${esc(name)}</div>
-          <div class="absence-options">
-            <label><input type="radio" name="absence-${i}" value="" checked> Aanwezig</label>
-            <label><input type="radio" name="absence-${i}" value="Ochtend"> Ochtend</label>
-            <label><input type="radio" name="absence-${i}" value="Middag"> Middag</label>
-            <label><input type="radio" name="absence-${i}" value="Hele dag"> Hele dag</label>
+        ${students.map((name,i)=>`<div class="absence-row" data-absence-row="${i}">
+          <div class="absence-head">
+            <div class="absence-name">${esc(name)}</div>
+            <label class="absence-toggle">
+              <input class="absence-check" type="checkbox" data-index="${i}">
+              <span>Absent</span>
+            </label>
+          </div>
+
+          <div class="absence-details hidden" data-details="${i}">
+            <div class="absence-field">
+              <label>Absentie</label>
+              <select class="input absence-status">
+                <option value="Geoorloofd absent">Geoorloofd absent</option>
+                <option value="Ongeoorloofd absent">Ongeoorloofd absent</option>
+              </select>
+            </div>
+
+            <div class="absence-field">
+              <label>Dagdeel</label>
+              <div class="absence-periods">
+                <label><input type="radio" name="absence-period-${i}" value="Ochtend" checked> Ochtend</label>
+                <label><input type="radio" name="absence-period-${i}" value="Middag"> Middag</label>
+                <label><input type="radio" name="absence-period-${i}" value="Hele dag"> Hele dag</label>
+              </div>
+            </div>
+
+            <div class="absence-field">
+              <label>Reden <span class="muted">(optioneel)</span></label>
+              <input class="input absence-reason" type="text" placeholder="Bijv. ziek, tandarts, verlof…">
+            </div>
           </div>
         </div>`).join('')}
       </div>
       <div class="row" style="margin-top:14px">
-        <button id="makeAbsenceList" class="btn">Maak overzicht</button>
+        <button id="makeAbsenceList" class="btn">Maak absentielijst</button>
         <button id="clearAbsences" class="btn secondary">Wissen</button>
       </div>
     `:`
@@ -76,14 +100,31 @@ export async function renderAbsences(root){
   const heading=root.querySelector('#absenceHeading');
   const text=root.querySelector('#absenceText');
 
+  root.querySelectorAll('.absence-check').forEach(check=>{
+    check.addEventListener('change',()=>{
+      const i=check.dataset.index;
+      const details=root.querySelector(`[data-details="${i}"]`);
+      details?.classList.toggle('hidden',!check.checked);
+      root.querySelector(`[data-absence-row="${i}"]`)?.classList.toggle('is-absent',check.checked);
+    });
+  });
+
   function collect(){
     const rows=[];
     students.forEach((name,i)=>{
-      const selected=root.querySelector(`input[name="absence-${i}"]:checked`);
-      const value=selected?.value||'';
-      if(value)rows.push({name,value});
+      const row=root.querySelector(`[data-absence-row="${i}"]`);
+      const checked=row?.querySelector('.absence-check')?.checked;
+      if(!checked)return;
+      const status=row.querySelector('.absence-status')?.value||'Geoorloofd absent';
+      const period=row.querySelector(`input[name="absence-period-${i}"]:checked`)?.value||'Ochtend';
+      const reason=(row.querySelector('.absence-reason')?.value||'').trim();
+      rows.push({name,status,period,reason});
     });
     return rows;
+  }
+
+  function lineFor(x){
+    return `${x.name} – ${x.status} – ${x.period}${x.reason?` – Reden: ${x.reason}`:''}`;
   }
 
   function makeOverview(){
@@ -91,8 +132,8 @@ export async function renderAbsences(root){
     const d=dateInput.value||initialDate;
     heading.textContent=`Absenties – ${dateNL(d)}`;
     text.value=rows.length
-      ? rows.map(x=>`${x.name} – ${x.value}`).join('\n')
-      : 'Geen absenties.';
+      ? rows.map(lineFor).join('\n')
+      : 'Geen leerlingen absent gemeld.';
     result.classList.remove('hidden');
     setTimeout(()=>result.scrollIntoView({behavior:'smooth',block:'start'}),50);
   }
@@ -100,9 +141,20 @@ export async function renderAbsences(root){
   root.querySelector('#makeAbsenceList').onclick=makeOverview;
 
   root.querySelector('#clearAbsences').onclick=()=>{
-    students.forEach((_,i)=>{
-      const present=root.querySelector(`input[name="absence-${i}"][value=""]`);
-      if(present)present.checked=true;
+    root.querySelectorAll('.absence-check').forEach(check=>{
+      check.checked=false;
+      const i=check.dataset.index;
+      root.querySelector(`[data-details="${i}"]`)?.classList.add('hidden');
+      root.querySelector(`[data-absence-row="${i}"]`)?.classList.remove('is-absent');
+      const row=root.querySelector(`[data-absence-row="${i}"]`);
+      if(row){
+        const status=row.querySelector('.absence-status');
+        if(status)status.value='Geoorloofd absent';
+        const morning=row.querySelector(`input[name="absence-period-${i}"][value="Ochtend"]`);
+        if(morning)morning.checked=true;
+        const reason=row.querySelector('.absence-reason');
+        if(reason)reason.value='';
+      }
     });
     result.classList.add('hidden');
     text.value='';

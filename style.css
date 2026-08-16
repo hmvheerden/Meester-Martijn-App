@@ -221,11 +221,18 @@ body{
   color:var(--text) !important;
 }
 
-/* v35: absenties */
+/* v37: absenties */
 .absence-list{display:flex;flex-direction:column;gap:10px}
-.absence-row{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
-.absence-name{font-weight:800;margin-bottom:9px}
-.absence-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.absence-options label{display:flex;align-items:center;gap:7px;font-size:14px}
-.absence-options input{width:19px;height:19px;accent-color:var(--accent)}
-@media(max-width:420px){.absence-options{grid-template-columns:1fr}}
+.absence-row{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card);transition:border-color .15s ease,box-shadow .15s ease}
+.absence-row.is-absent{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)}
+.absence-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.absence-name{font-weight:800;min-width:0}
+.absence-toggle{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:750;white-space:nowrap}
+.absence-toggle input{width:21px;height:21px;accent-color:var(--accent)}
+.absence-details{display:grid;gap:11px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.absence-field{display:grid;gap:6px}
+.absence-field>label{font-size:13px;font-weight:750;color:var(--muted)}
+.absence-periods{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.absence-periods label{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 8px;border:1px solid var(--line);border-radius:12px;font-size:13px;background:var(--bg)}
+.absence-periods input{width:18px;height:18px;accent-color:var(--accent)}
+@media(max-width:420px){.absence-periods{grid-template-columns:1fr}.absence-periods label{justify-content:flex-start}}
