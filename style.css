@@ -220,3 +220,12 @@ body{
   background:var(--bg) !important;
   color:var(--text) !important;
 }
+
+/* v35: absenties */
+.absence-list{display:flex;flex-direction:column;gap:10px}
+.absence-row{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.absence-name{font-weight:800;margin-bottom:9px}
+.absence-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.absence-options label{display:flex;align-items:center;gap:7px;font-size:14px}
+.absence-options input{width:19px;height:19px;accent-color:var(--accent)}
+@media(max-width:420px){.absence-options{grid-template-columns:1fr}}

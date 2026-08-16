@@ -221,3 +221,18 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - JSON-output voor Agenda, Mail en andere gestructureerde AI-functies gebruikt `response_format` met `application/json`.
 - Spraaktranscriptie via Gemini gebruikt multimodale audio-input via de Interactions API.
 - OpenAI blijft als alternatief volledig beschikbaar.
+
+## Versie 35 – Absenties invoeren
+- Onder `Klas` staat nu `Absenties invoeren`.
+- Gebruikt automatisch de opgeslagen klassenlijst.
+- Per leerling: Aanwezig, Ochtend, Middag of Hele dag.
+- Maakt een overzicht met de gekozen datum erboven.
+- `Mail naar mezelf` gebruikt het e-mailadres uit Instellingen.
+- Mailonderwerp: `Absenties – dd-mm-jjjj`.
+- Alle bestaande functies uit v34 blijven behouden.
+
+## Versie 36
+- Hoofdmenuvolgorde gewijzigd naar:
+  Home, Klas, To Do, Agenda, Mail, Notities, Reflectie.
+- Absenties invoeren blijft onder Klas beschikbaar.
+- Alle overige functies uit v35 blijven behouden.
