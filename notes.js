@@ -1,8 +1,7 @@
 import {getAll,put,del,settings} from './storage.js';
 import {uid,fmt,esc,mailto,copy,toast} from './utils.js';
-import {transcribe,summarizeNote,adjustText} from './api.js';
+import {transcribe,summarizeNote,adjustText,normalizeClassNames} from './api.js';
 import {Recorder} from './recorder.js';
-import {createTodo} from './planner-utils.js';
 
 let recorder=null;
 let adjustRecorder=null;
@@ -29,7 +28,7 @@ export async function renderNotes(root){
  <textarea id="noteText" class="textarea" placeholder="Schrijf je notitie..."></textarea>
  <div class="row"><button class="btn secondary" id="recordNote">🎙️ Notitie inspreken</button><span id="recordState"></span></div>
  <div id="transcriptBox" class="muted" style="margin-top:10px"></div>
- <div class="row" style="margin-top:12px"><button class="btn secondary" id="summarizeNote">Maak korte samenvatting</button><button class="btn secondary" id="adjustNoteVoice">🎙️ Spreek in om aan te passen</button><button class="btn" id="saveNote">Opslaan</button><button class="btn secondary" id="noteToTodo">Naar To Do</button><button class="btn secondary" id="clearNote">Wissen</button></div></div>
+ <div class="row" style="margin-top:12px"><button class="btn secondary" id="summarizeNote">Maak korte samenvatting</button><button class="btn secondary" id="adjustNoteVoice">🎙️ Spreek in om aan te passen</button><button class="btn" id="saveNote">Opslaan</button><button class="btn secondary" id="noteToTodo">Naar To Do Klas</button><button class="btn secondary" id="clearNote">Wissen</button></div></div>
  <div class="field"><input id="searchNotes" class="input" placeholder="Zoek in notities"></div>
  <div class="section-title">Opgeslagen notities</div><div id="notesList" class="list"></div>`;
  const text=root.querySelector('#noteText'),list=root.querySelector('#notesList'),state=root.querySelector('#recordState'),transcriptBox=root.querySelector('#transcriptBox');
@@ -37,12 +36,18 @@ export async function renderNotes(root){
  async function draw(){
   const q=root.querySelector('#searchNotes').value.toLowerCase();
   const notes=(await getAll('notes')).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).filter(n=>n.text.toLowerCase().includes(q));
-  list.innerHTML=notes.length?notes.map(n=>`<div class="item"><div class="item-head"><div><strong>${esc(n.text.slice(0,70))}${n.text.length>70?'…':''}</strong><div class="muted">${fmt(n.updatedAt)}</div></div></div><div class="row" style="margin-top:10px"><button class="btn secondary small" data-edit="${n.id}">Bewerken</button><button class="btn secondary small" data-copy="${n.id}">Kopiëren</button><button class="btn secondary small" data-mail="${n.id}">Mail naar mezelf</button><button class="btn secondary small" data-file="${n.id}">Deel .txt</button><button class="btn secondary small" data-todo="${n.id}">Naar To Do</button><button class="btn danger small" data-del="${n.id}">Verwijderen</button></div></div>`).join(''):'<div class="muted">Nog geen notities.</div>';
+  list.innerHTML=notes.length?notes.map(n=>`<div class="item"><div class="item-head"><div><strong>${esc(n.text.slice(0,70))}${n.text.length>70?'…':''}</strong><div class="muted">${fmt(n.updatedAt)}</div></div></div><div class="row" style="margin-top:10px"><button class="btn secondary small" data-edit="${n.id}">Bewerken</button><button class="btn secondary small" data-copy="${n.id}">Kopiëren</button><button class="btn secondary small" data-mail="${n.id}">Mail naar mezelf</button><button class="btn secondary small" data-file="${n.id}">Deel .txt</button><button class="btn secondary small" data-todo="${n.id}">Naar To Do Klas</button><button class="btn danger small" data-del="${n.id}">Verwijderen</button></div></div>`).join(''):'<div class="muted">Nog geen notities.</div>';
   for(const b of list.querySelectorAll('[data-edit]'))b.onclick=()=>{const n=notes.find(x=>x.id===b.dataset.edit);editId=n.id;text.value=n.text;text.focus()};
   for(const b of list.querySelectorAll('[data-copy]'))b.onclick=()=>copy(notes.find(x=>x.id===b.dataset.copy).text);
-  for(const b of list.querySelectorAll('[data-mail]'))b.onclick=()=>{const n=notes.find(x=>x.id===b.dataset.mail);mailto(settings.get('email',''),`Notitie – ${new Date(n.updatedAt).toLocaleDateString('nl-NL')}`,n.text)};
+  for(const b of list.querySelectorAll('[data-mail]'))b.onclick=async()=>{
+    const n=notes.find(x=>x.id===b.dataset.mail);
+    let body=n.text;
+    const names=settings.get('classList',[]);
+    if(names.length){try{const d=await normalizeClassNames(body,names);body=d.text||body}catch{}}
+    mailto(settings.get('email',''),`Notitie – ${new Date(n.updatedAt).toLocaleDateString('nl-NL')}`,body);
+  };
   for(const b of list.querySelectorAll('[data-file]'))b.onclick=()=>shareTxt(notes.find(x=>x.id===b.dataset.file));
-  for(const b of list.querySelectorAll('[data-todo]'))b.onclick=async()=>{const n=notes.find(x=>x.id===b.dataset.todo);await createTodo(n.text,{folder:'today'});toast('Toegevoegd aan To Do vandaag')};
+  for(const b of list.querySelectorAll('[data-todo]'))b.onclick=async()=>{const n=notes.find(x=>x.id===b.dataset.todo);await put('classTodos',{id:uid(),text:n.text,done:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast('Toegevoegd aan To Do Klas')};
   for(const b of list.querySelectorAll('[data-del]'))b.onclick=async()=>{if(confirm('Deze notitie verwijderen?')){await del('notes',b.dataset.del);draw()}};
  }
  root.querySelector('#recordNote').onclick=async()=>{
@@ -70,7 +75,7 @@ export async function renderNotes(root){
  };
  root.querySelector('#summarizeNote').onclick=async()=>{if(!text.value.trim())return toast('Typ of spreek eerst een notitie in.');try{const original=text.value;root.querySelector('#summarizeNote').disabled=true;const sum=await summarizeNote(original);text.value=sum.text;toast('Notitie samengevat')}catch(e){toast(e.message)}finally{root.querySelector('#summarizeNote').disabled=false}};
  root.querySelector('#saveNote').onclick=async()=>{if(!text.value.trim())return toast('Schrijf eerst iets.');const now=new Date().toISOString();const old=editId?(await getAll('notes')).find(n=>n.id===editId):null;await put('notes',{id:editId||uid(),text:text.value.trim(),createdAt:old?.createdAt||now,updatedAt:now});editId=null;text.value='';transcriptBox.textContent='';toast('Notitie opgeslagen');draw()};
- root.querySelector('#noteToTodo').onclick=async()=>{if(!text.value.trim())return toast('Maak eerst een notitie.');await createTodo(text.value.trim(),{folder:'today'});toast('Toegevoegd aan To Do vandaag')};
+ root.querySelector('#noteToTodo').onclick=async()=>{if(!text.value.trim())return toast('Maak eerst een notitie.');await put('classTodos',{id:uid(),text:text.value.trim(),done:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast('Toegevoegd aan To Do Klas')};
  root.querySelector('#clearNote').onclick=()=>{editId=null;text.value='';transcriptBox.textContent=''};
  root.querySelector('#searchNotes').oninput=draw; draw();
 }

@@ -2,7 +2,7 @@ import {settings,getAll,put} from './storage.js';
 import {esc,mailto,copy,toast} from './utils.js';
 
 export async function renderPoints(root){
-  const names=settings.get('classList',[]);
+  const names=settings.get('classList',[]).slice().sort((a,b)=>String(a).localeCompare(String(b),'nl',{sensitivity:'base'}));
   root.innerHTML=`<div class="topbar"><div><div class="title">Punten bijhouden</div><div class="subtitle">Geef per leerling punten erbij of eraf.</div></div></div>
   ${!names.length?'<div class="card">Voeg eerst je klassenlijst toe via Instellingen.</div>':''}
   <div class="card">

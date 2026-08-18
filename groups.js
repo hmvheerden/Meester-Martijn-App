@@ -7,7 +7,7 @@ function makeBySize(names,size,avoid,prefer){let best=[],score=1e9;for(let t=0;t
 function makeByCount(names,count,avoid,prefer){let best=[],score=1e9;for(let t=0;t<300;t++){const a=shuffle(names),g=Array.from({length:Math.min(count,names.length)},()=>[]);a.forEach((n,i)=>g[i%g.length].push(n));const s=conflicts(g,avoid)*10+missingPreferred(g,prefer);if(s<score){best=g;score=s;if(!s)break}}return best}
 
 export async function renderGroups(root){
-  const names=settings.get('classList',[]);
+  const names=settings.get('classList',[]).slice().sort((a,b)=>String(a).localeCompare(String(b),'nl',{sensitivity:'base'}));
   let groups=[],dragName=null,mode='auto',manualCount=4,activeManual=0;
   let manualGroups=Array.from({length:manualCount},()=>[]);
 

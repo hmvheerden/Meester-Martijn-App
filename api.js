@@ -76,26 +76,82 @@ async function geminiInteraction({messages=[],json=false,input=null,systemInstru
   if(!text)throw new Error('Gemini gaf geen tekst terug.');
   return {choices:[{message:{content:text}}],_provider:'gemini',_model:model,_raw:data};
 }
+function generateContentText(data){
+  return (data?.candidates?.[0]?.content?.parts||[]).map(x=>x?.text||'').join('').trim();
+}
+async function uploadGeminiFile(file,mime){
+  const key=requireGeminiKey();
+  const startResponse=await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files',{
+    method:'POST',
+    headers:{
+      'x-goog-api-key':key,
+      'X-Goog-Upload-Protocol':'resumable',
+      'X-Goog-Upload-Command':'start',
+      'X-Goog-Upload-Header-Content-Length':String(file.size),
+      'X-Goog-Upload-Header-Content-Type':mime,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({file:{display_name:'spraakopname'}})
+  });
+  if(!startResponse.ok){
+    const data=await startResponse.json().catch(()=>({}));
+    throw new Error(data?.error?.message||'Gemini kon de lange audio-upload niet starten.');
+  }
+  const uploadUrl=startResponse.headers.get('x-goog-upload-url');
+  if(!uploadUrl)throw new Error('Gemini gaf geen upload-URL terug.');
+
+  const uploadResponse=await fetch(uploadUrl,{
+    method:'POST',
+    headers:{
+      'Content-Length':String(file.size),
+      'X-Goog-Upload-Offset':'0',
+      'X-Goog-Upload-Command':'upload, finalize'
+    },
+    body:file
+  });
+  const info=await uploadResponse.json().catch(()=>({}));
+  if(!uploadResponse.ok)throw new Error(info?.error?.message||'Gemini kon de audio niet uploaden.');
+  if(!info?.file?.uri)throw new Error('Gemini gaf geen bestand-URI terug.');
+  return info.file;
+}
+async function geminiGenerateContent(parts){
+  const key=requireGeminiKey();
+  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel())}:generateContent`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{role:'user',parts}]})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data?.error?.message||`Gemini gaf foutcode ${response.status}.`);
+  const text=generateContentText(data);
+  if(!text)throw new Error('Gemini herkende geen spraak.');
+  return text;
+}
 async function geminiTranscribe(formData){
   const file=formData?.get?.('file');
   if(!file||typeof file.arrayBuffer!=='function')throw new Error('Geen audio-opname gevonden.');
 
-  const bytes=new Uint8Array(await file.arrayBuffer());
-  if(bytes.byteLength>20*1024*1024)throw new Error('De audio-opname is te groot voor directe Gemini-transcriptie.');
-
   let mime=file.type||'audio/m4a';
-  // Interactions ondersteunt o.a. M4A, MP3, OGG en WAV.
-  // Op iPhone gebruikt de app normaal audio/mp4; dat behandelen we als M4A.
   if(mime.startsWith('audio/mp4'))mime='audio/m4a';
   else if(mime.startsWith('audio/webm'))mime='audio/ogg';
 
-  const input=[
-    {type:'text',text:'Transcribeer deze Nederlandse spraakopname nauwkeurig. Geef uitsluitend de gesproken tekst terug, zonder uitleg, tijdcodes of aanhalingstekens. Let extra op gespelde namen en expliciete aanwijzingen over schrijfwijze.'},
-    {type:'audio',data:bytesToBase64(bytes),mime_type:mime}
-  ];
-  const result=await geminiInteraction({input});
-  const text=assistantText(result).trim();
-  if(!text)throw new Error('Gemini herkende geen spraak.');
+  const prompt='Transcribeer deze Nederlandse spraakopname volledig en nauwkeurig. Geef uitsluitend de gesproken tekst terug, zonder uitleg, tijdcodes of aanhalingstekens. Sla niets over, ook niet bij een langere opname. Let extra op gespelde namen en expliciete aanwijzingen over schrijfwijze.';
+
+  // Kleine/middelgrote opnames inline; grotere opnames via de officiële Files API.
+  if(file.size<18*1024*1024){
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    const text=await geminiGenerateContent([
+      {text:prompt},
+      {inlineData:{mimeType:mime,data:bytesToBase64(bytes)}}
+    ]);
+    return {text};
+  }
+
+  const uploaded=await uploadGeminiFile(file,mime);
+  const text=await geminiGenerateContent([
+    {text:prompt},
+    {file_data:{mime_type:uploaded.mimeType||mime,file_uri:uploaded.uri}}
+  ]);
   return {text};
 }
 
@@ -143,19 +199,127 @@ export async function testConnection(){
    throw e;
  }
 }
-export async function chat(messages,action='compose'){const actions={compose:'Stel op basis van het gesprek een complete direct bruikbare e-mail op.',regenerate:'Maak een nieuwe goede versie van de e-mail.',shorter:'Maak de e-mail duidelijk korter zonder belangrijke informatie te verliezen.',friendlier:'Maak de e-mail iets warmer en vriendelijker, maar natuurlijk.',formal:'Maak de e-mail formeler en professioneel.',informal:'Maak de e-mail informeler en natuurlijker, zonder slordig te worden.'};const apiMessages=[{role:'system',content:mailInstructions},...messages.map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.content||'')})),{role:'user',content:actions[action]||actions.compose}];const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:apiMessages,response_format:{type:'json_object'}})});const result=parseMail(assistantText(data));if(!result.body)throw new Error('OpenAI gaf geen bruikbare e-mail terug. Probeer het opnieuw.');return result}
+async function prepareLongText(text,purpose='samenvatting'){
+  const source=String(text||'').trim();
+  if(source.length<=12000)return source;
+  const chunks=[];
+  for(let i=0;i<source.length;i+=9000)chunks.push(source.slice(i,i+9000));
+  const notes=[];
+  for(let i=0;i<chunks.length;i++){
+    const data=await openai('/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:activeModel(),
+        messages:[
+          {role:'system',content:`Haal alle relevante informatie uit deel ${i+1} van een langere Nederlandse transcriptie voor ${purpose}. Verlies geen namen, feiten, afspraken, observaties, data, gevoelens, voorbeelden of gewenste acties. Maak compacte maar volledige werknotities. Geen inleiding.`},
+          {role:'user',content:chunks[i]}
+        ]
+      })
+    });
+    notes.push(assistantText(data));
+  }
+  return `Samengevoegde werknotities uit een lange transcriptie:\n\n${notes.join('\n\n')}`;
+}
+
+export async function chat(messages,action='compose'){
+  const actions={
+    compose:'Stel op basis van het gesprek een complete direct bruikbare e-mail op.',
+    regenerate:'Maak een nieuwe goede versie van de e-mail.',
+    shorter:'Maak de e-mail duidelijk korter zonder belangrijke informatie te verliezen.',
+    friendlier:'Maak de e-mail iets warmer en vriendelijker, maar natuurlijk.',
+    formal:'Maak de e-mail formeler en professioneel.',
+    informal:'Maak de e-mail informeler en natuurlijker, zonder slordig te worden.'
+  };
+  const prepared=[];
+  for(const m of messages){
+    let content=String(m.content||'');
+    if(m.role!=='assistant'&&content.length>12000)content=await prepareLongText(content,'het opstellen van een e-mail');
+    prepared.push({role:m.role==='assistant'?'assistant':'user',content});
+  }
+  const apiMessages=[{role:'system',content:mailInstructions},...prepared,{role:'user',content:actions[action]||actions.compose}];
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:activeModel(),messages:apiMessages,response_format:{type:'json_object'}})
+  });
+  let result=parseMail(assistantText(data));
+  if(!result.body)throw new Error('AI gaf geen bruikbare e-mail terug. Probeer het opnieuw.');
+
+  const classList=settings.get('classList',[]);
+  if(Array.isArray(classList)&&classList.length){
+    const checkedBody=await normalizeClassNames(result.body,classList);
+    const checkedSubject=await normalizeClassNames(result.subject,classList);
+    result={subject:checkedSubject.text||result.subject,body:checkedBody.text||result.body};
+  }
+  return result;
+}
+
+
 
 export async function generalChat(messages){
   const apiMessages=[
     {role:'system',content:'Je bent de persoonlijke AI-assistent in de Meester Martijn App. Antwoord in natuurlijk Nederlands, behulpzaam en duidelijk. Houd antwoorden compact tenzij meer uitleg nuttig is. Je bent een gewone algemene chatassistent.'},
     ...messages.map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.content||'')}))
   ];
-  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:apiMessages})});
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:activeModel(),messages:apiMessages})
+  });
   const out=assistantText(data);
-  if(!out)throw new Error('OpenAI gaf geen antwoord terug.');
+  if(!out)throw new Error('AI gaf geen antwoord terug.');
   return {text:out};
 }
 
+async function fileToDataURL(file){
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  return `data:${file.type||'image/jpeg'};base64,${bytesToBase64(bytes)}`;
+}
+
+export async function generalChatWithImage(messages,file,prompt=''){
+  if(!file)return generalChat(messages);
+  const question=String(prompt||'').trim()||'Bekijk deze afbeelding en help me ermee.';
+
+  if(provider()==='gemini'){
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    const text=await geminiGenerateContent([
+      {text:`Je bent de persoonlijke AI-assistent in de Meester Martijn App. Antwoord in natuurlijk Nederlands, behulpzaam en duidelijk. Houd antwoorden compact tenzij meer uitleg nuttig is.\n\nVraag van de gebruiker:\n${question}`},
+      {inlineData:{mimeType:file.type||'image/jpeg',data:bytesToBase64(bytes)}}
+    ]);
+    return {text};
+  }
+
+  const key=requireOpenAIKey();
+  const dataUrl=await fileToDataURL(file);
+  const prior=messages.slice(-8).map(m=>({
+    role:m.role==='assistant'?'assistant':'user',
+    content:String(m.content||'')
+  }));
+  const response=await fetch(`${OPENAI_BASE}/chat/completions`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({
+      model:textModel(),
+      messages:[
+        {role:'system',content:'Je bent de persoonlijke AI-assistent in de Meester Martijn App. Antwoord in natuurlijk Nederlands, behulpzaam en duidelijk.'},
+        ...prior,
+        {role:'user',content:[
+          {type:'text',text:question},
+          {type:'image_url',image_url:{url:dataUrl}}
+        ]}
+      ]
+    })
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){
+    const msg=data?.error?.message||`OpenAI gaf foutcode ${response.status}.`;
+    throw new Error(msg);
+  }
+  const out=data?.choices?.[0]?.message?.content?.trim?.()||'';
+  if(!out)throw new Error('AI gaf geen antwoord terug.');
+  return {text:out};
+}
 
 export async function adjustText(existing,instruction,context='tekst'){
   const data=await openai('/chat/completions',{
@@ -252,9 +416,14 @@ export async function summarizeReflection(text,mode='lesson'){
   const system=mode==='day'
     ? 'Vat een dagreflectie van een Nederlandse basisschoolleerkracht kort en praktisch samen. Gebruik precies deze kopjes: Wat ging goed vandaag:, Wat vroeg aandacht:, Belangrijk voor morgen:. Houd ieder onderdeel kort en concreet. Geen inleiding.'
     : 'Vat een lesreflectie van een Nederlandse basisschoolleerkracht kort en praktisch samen. Gebruik precies deze kopjes: Wat ging goed:, Wat kan beter:, Volgende keer:. Houd ieder onderdeel kort en concreet. Geen inleiding.';
-  const data=await openai('/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:textModel(),messages:[{role:'system',content:system},{role:'user',content:String(text||'')}]})});
+  const prepared=await prepareLongText(String(text||''),mode==='day'?'een dagreflectie':'een lesreflectie');
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:activeModel(),messages:[{role:'system',content:system},{role:'user',content:prepared}]})
+  });
   const out=assistantText(data);
-  if(!out)throw new Error('OpenAI gaf geen samenvatting terug.');
+  if(!out)throw new Error('AI gaf geen samenvatting terug.');
   return {text:out};
 }
 
@@ -380,4 +549,92 @@ Maak iedere actie kort, uitvoerbaar en zelfstandig begrijpelijk. Maximaal 5 acti
   const raw=assistantText(data).replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
   let obj;try{obj=JSON.parse(raw)}catch{throw new Error('AI kon geen actiepunten uitlezen.')}
   return {actions:Array.isArray(obj.actions)?obj.actions.map(x=>String(x).trim()).filter(Boolean).slice(0,5):[]};
+}
+
+
+export async function normalizeClassNames(text,names=[]){
+  const cleanNames=(Array.isArray(names)?names:[]).map(x=>String(x||'').trim()).filter(Boolean);
+  const source=String(text||'').trim();
+  if(!source||!cleanNames.length)return {text:source};
+
+  const system=`Controleer uitsluitend de spelling van leerlingnamen in een Nederlandse tekst.
+Gebruik de onderstaande klassenlijst als het gezaghebbende namenwoordenboek.
+
+KLASSENLIJST:
+${cleanNames.join('\n')}
+
+Regels:
+- Als een naam in de tekst fonetisch, verkeerd gespeld of door spraakherkenning anders is geschreven, vervang die alleen wanneer duidelijk is welke leerling uit de klassenlijst bedoeld wordt.
+- Gebruik altijd exact de schrijfwijze uit de klassenlijst.
+- Als meerdere namen plausibel zijn of je bent niet zeker, verander die naam dan niet.
+- Verander GEEN gewone woorden, zinsbouw, inhoud, leestekens of formulering behalve waar dat strikt nodig is om een leerlingnaam correct te schrijven.
+- Voeg geen namen toe die niet genoemd of duidelijk bedoeld zijn.
+- Geef uitsluitend de volledige gecorrigeerde tekst terug, zonder uitleg of aanhalingstekens.`;
+
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:activeModel(),
+      messages:[
+        {role:'system',content:system},
+        {role:'user',content:source}
+      ]
+    })
+  });
+  const out=assistantText(data).trim();
+  if(!out)throw new Error('AI kon de namen niet controleren.');
+  return {text:out};
+}
+
+
+export async function summarizeClassWeek(events,context={}){
+  const weekNumber=String(context.weekNumber||'');
+  const year=String(context.year||'');
+  const classList=Array.isArray(context.classList)?context.classList:[];
+  const system=`Maak van de gebeurtenissen uit het klasdagboek een warm, positief en prettig leesbaar weekverslag voor de ouders/verzorgers van een basisschoolklas.
+
+Week: ${weekNumber}
+Jaar: ${year}
+
+Bekende leerlingnamen:
+${classList.map(x=>String(x)).join('\n')}
+
+Regels:
+- Schrijf alsof de leerkracht ouders op een leuke en toegankelijke manier meeneemt in wat de klas deze week heeft beleefd.
+- Maak er één samenhangend verhaal van en geen droge opsomming of administratie.
+- Begin met een korte, natuurlijke opening over de week.
+- Benoem leuke momenten, activiteiten, wat de kinderen hebben geleerd of geoefend en andere noemenswaardige gebeurtenissen.
+- Houd de toon warm, enthousiast en persoonlijk, maar niet overdreven of kinderachtig.
+- Positieve momenten mogen extra naar voren komen.
+- Verwerk aandachtspunten alleen als ze geschikt en relevant zijn voor een algemeen bericht aan alle ouders. Formuleer ze zorgvuldig en constructief.
+- Neem geen gevoelige, vertrouwelijke of negatieve informatie over een individuele leerling op in een algemeen ouderverslag.
+- Gebruik alleen informatie uit de aangeleverde gebeurtenissen en verzin niets.
+- Als leerlingnamen voorkomen en het passend is om die te noemen, gebruik exact de spelling uit de klassenlijst.
+- Verander namen alleen als duidelijk is welke leerling bedoeld wordt.
+- Schrijf in natuurlijk, vlot Nederlands met prettige korte alinea's.
+- Gebruik eventueel een paar passende tussenkopjes als dat de leesbaarheid verbetert.
+- Eindig met een korte positieve vooruitblik of afronding.
+- Geen formele briefaanhef, geen ondertekening en geen afsluiting zoals "Met vriendelijke groet".
+- Geef uitsluitend het weekverslag terug.`;
+
+  const payload=(Array.isArray(events)?events:[]).map(x=>({
+    date:String(x.date||''),
+    text:String(x.text||'')
+  }));
+
+  const data=await openai('/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:activeModel(),
+      messages:[
+        {role:'system',content:system},
+        {role:'user',content:JSON.stringify(payload)}
+      ]
+    })
+  });
+  const out=assistantText(data).trim();
+  if(!out)throw new Error('AI gaf geen weekverslag terug.');
+  return {text:out};
 }

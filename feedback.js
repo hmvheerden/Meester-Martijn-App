@@ -1,8 +1,7 @@
-import {settings} from './storage.js';
+import {settings,put} from './storage.js';
 import {transcribe,summarizeFeedback,adjustFeedback} from './api.js';
 import {Recorder} from './recorder.js';
-import {esc,mailto,toast} from './utils.js';
-import {createTodo} from './planner-utils.js';
+import {esc,mailto,toast,uid} from './utils.js';
 
 let recorder=null;
 let adjustRecorder=null;
@@ -28,7 +27,7 @@ async function shareMailWithPhoto({to,subject,body,file}){
 }
 
 export async function renderFeedback(root){
-  const students=settings.get('classList',[]);
+  const students=settings.get('classList',[]).slice().sort((a,b)=>String(a).localeCompare(String(b),'nl',{sensitivity:'base'}));
   root.innerHTML=`<div class="topbar"><div><div class="title">Feedback</div><div class="subtitle">Leg snel feedback vast bij een leerling.</div></div></div>
   <div class="card">
     <div class="field"><label>Kies leerling</label>
@@ -64,7 +63,7 @@ export async function renderFeedback(root){
     </div>
 
     <div class="row">
-      <button id="feedbackMail" class="btn">Mail naar mezelf</button><button id="feedbackSharePhoto" class="btn secondary">Deel met foto</button><button id="feedbackToTodo" class="btn secondary">Naar To Do</button><button id="feedbackClear" class="btn secondary">Wissen</button>
+      <button id="feedbackMail" class="btn">Mail naar mezelf</button><button id="feedbackSharePhoto" class="btn secondary">Deel met foto</button><button id="feedbackToTodo" class="btn secondary">Naar To Do Klas</button><button id="feedbackClear" class="btn secondary">Wissen</button>
     </div>
     <p class="muted">Mail naar mezelf gebruikt het e-mailadres uit Instellingen. Met ‘Deel met foto’ kun je de foto en feedback via het iOS-deelmenu delen.</p>
   </div>`;
@@ -139,8 +138,8 @@ export async function renderFeedback(root){
 
   root.querySelector('#feedbackToTodo').onclick=async()=>{
     const body=(summary.value||text.value).trim();if(!body)return toast('Maak eerst feedback.');
-    await createTodo(`Vervolgactie feedback ${student.value?student.value+': ':''}${body}`,{folder:'teacher'});
-    toast('Toegevoegd aan To Do Leerkracht');
+    await put('classTodos',{id:uid(),text:`Vervolgactie feedback ${student.value?student.value+': ':''}${body}`,done:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    toast('Toegevoegd aan To Do Klas');
   };
 
   root.querySelector('#feedbackClear').onclick=()=>{

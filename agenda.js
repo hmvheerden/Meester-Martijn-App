@@ -64,7 +64,7 @@ async function openAgendaFile(ev){
 
 export async function renderAgenda(root){
   let event=null;
-  root.innerHTML=`<div class="topbar"><div><div class="title">Agenda</div><div class="subtitle">Typ of spreek een afspraak in. AI maakt er een agenda-item van.</div></div></div>
+  root.innerHTML=`<div class="topbar"><div><div class="title">AI-Agenda</div><div class="subtitle">Typ of spreek een afspraak in. AI maakt er een agenda-item van.</div></div></div>
   <div class="card">
     <div class="field"><label>Wat wil je in je agenda zetten?</label>
       <textarea id="agendaPrompt" class="textarea" placeholder="Bijv. Morgen om half vier oudergesprek met Lisa, duurt 30 minuten."></textarea>

@@ -237,13 +237,63 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Absenties invoeren blijft onder Klas beschikbaar.
 - Alle overige functies uit v35 blijven behouden.
 
+## Versie 37 – leerlingnamen in Reflectie
+- Reflectie gebruikt de opgeslagen klassenlijst als namenwoordenboek.
+- Na inspreken controleert AI automatisch of leerlingnamen overeenkomen met de exacte spelling uit de klassenlijst.
+- Ook getypte reflecties worden vóór AI-samenvatting en vóór Opslaan op leerlingnamen gecontroleerd.
+- Nieuwe knop `Controleer leerlingnamen` om dit handmatig uit te voeren.
+- Alleen duidelijke naam-matches worden aangepast; gewone tekst en twijfelgevallen blijven ongemoeid.
+- Alle bestaande functies uit v36 blijven behouden, inclusief Absenties invoeren.
 
-## Versie 37
-- Hoofdmenu is nu: Home, Class, Mail, Agenda, To Do.
-- Reflectie staat niet meer in het hoofdmenu en is verplaatst naar Class.
-- Absenties invoeren gebruikt geen aanwezigheidsknop meer.
-- Per leerling staat direct een vinkje `Absent`.
-- Na aanvinken kies je Geoorloofd absent of Ongeoorloofd absent.
-- Je kiest Ochtend, Middag of Hele dag.
-- Er is optioneel ruimte voor een reden.
-- Het overzicht bevat alleen leerlingen die als absent zijn aangevinkt.
+## Versie 38 – Soundboard kleuren en volgorde
+- Elk geluid op een soundboard kan een eigen knopkleur krijgen.
+- Bij het toevoegen van een nieuw geluid kan direct een kleur worden gekozen.
+- Bestaande geluiden krijgen automatisch een standaardkleur.
+- Per geluid zijn knoppen `Omhoog` en `Omlaag` toegevoegd om de volgorde te wijzigen.
+- De gekozen kleur en volgorde worden lokaal opgeslagen en blijven behouden.
+- Alle wijzigingen uit v37 blijven behouden, waaronder klassenlijst-gebaseerde naamcontrole in Reflectie en Absenties invoeren.
+
+## Versie 39
+- Timer is verwijderd uit Klas.
+- De interne hoofdroute heet nu `klas` in plaats van `class`.
+- De zichtbare menunaam blijft `Klas`.
+- Oude links met `#class` worden automatisch doorgestuurd naar `#klas`.
+- Alle overige functies uit v38 blijven behouden.
+
+## Versie 40 – Klasdagboek
+- De algemene AI-chat/Home is verwijderd.
+- `Klas` is nu het eerste hoofdmenu en de standaard startpagina.
+- Agenda heet `AI-Agenda`.
+- Mail heet `AI-Mail`.
+- Nieuw onder Klas: `Klasdagboek`.
+- Klasdagboek slaat gebeurtenissen per gekozen dag lokaal op.
+- Gebeurtenissen kunnen getypt of ingesproken worden.
+- Na inspreken worden leerlingnamen automatisch gecontroleerd tegen de klassenlijst.
+- Getypte gebeurtenissen worden bij opslaan eveneens tegen de klassenlijst gecontroleerd.
+- `Maak een weekverslag` bundelt alle gebeurtenissen van de betreffende ISO-week met AI.
+- Weekverslagen krijgen automatisch weeknummer en jaar en worden na generatie nogmaals op leerlingnamen gecontroleerd.
+- Weekverslagen kunnen lokaal worden opgeslagen en direct worden gemaild naar het e-mailadres uit Instellingen.
+- Mailonderwerp: `Weekverslag [weeknummer]`.
+- Onder `Opgeslagen weekverslagen` kunnen eerdere verslagen geopend, individueel gemaild of verwijderd worden.
+- Alle bestaande functies uit v39 blijven behouden, behalve de verwijderde algemene AI-chat/Home.
+
+## Versie 41
+- Alle leerling-afvinklijsten gebruiken alfabetische volgorde volgens Nederlandse sortering.
+- Absenties: eerst leerling aanvinken; daarna standaard `Hele dag`, gevolgd door `Ochtend` en `Middag`.
+- AI-Mail controleert vóór tonen/versturen leerlingnamen tegen de klassenlijst.
+- Mailen vanuit Notities, Reflectie en AI-chat controleert leerlingnamen eveneens tegen de klassenlijst.
+- Lange transcripties zijn robuuster: audio wordt op lagere bitrate opgenomen; grotere Gemini-audio gebruikt de Files API; lange tekst wordt in delen voorbereid voor Mail en Reflectie.
+- `Notities` is ook als tegel onder Klas beschikbaar; bestaande notities blijven behouden en mailbaar.
+- Nieuwe `To Do` onder Klas voor taken voor klas/leerlingen, met typen, inspreken, afvinken en mailen.
+- De losse To Do-hoofdpagina is verwijderd.
+- `AI-chat` is het laatste hoofdmenu-item met de eerdere chatfuncties.
+- AI-chat ondersteunt `Foto maken` en `Foto kiezen`; daarna kan de vraag getypt of ingesproken worden.
+- Ieder AI-chatantwoord kan afzonderlijk direct worden gemaild naar het e-mailadres uit Instellingen.
+
+## Versie 42
+- AI-weekverslagen uit het Klasdagboek zijn nu specifiek geschreven voor ouders/verzorgers.
+- De toon is warm, positief, toegankelijk en prettig leesbaar.
+- Het verslag vormt één samenhangend verhaal over de week in plaats van een administratieve opsomming.
+- Leuke momenten, activiteiten en wat de klas heeft geleerd krijgen nadruk.
+- Individuele gevoelige of negatieve leerlinginformatie wordt niet in het algemene ouderverslag opgenomen.
+- Het verslag eindigt met een korte positieve afronding of vooruitblik.

@@ -2,7 +2,7 @@ import {settings,getAll,put,del} from './storage.js';
 import {uid,esc,fmt,mailto,copy,toast} from './utils.js';
 
 export async function renderChecklist(root){
-  const names=settings.get('classList',[]);
+  const names=settings.get('classList',[]).slice().sort((a,b)=>String(a).localeCompare(String(b),'nl',{sensitivity:'base'}));
   let active=null;
 
   root.innerHTML=`<div class="topbar"><div><div class="title">Checklist</div><div class="subtitle">Maak checklists op basis van je volledige klassenlijst.</div></div></div>
