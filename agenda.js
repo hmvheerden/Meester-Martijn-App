@@ -1,10 +1,12 @@
-import {parseCalendarEvent,transcribe} from './api.js';
+import {parseCalendarEvent,transcribe,generalChatWithImage} from './api.js';
 import {Recorder} from './recorder.js';
 import {esc,toast,uid} from './utils.js';
 import {put,settings} from './storage.js';
 
 let recorder=null;
 let adjustRecorder=null;
+let agendaPhoto=null;
+let agendaPhotoUrl='';
 
 function pad(n){return String(n).padStart(2,'0')}
 function icsEscape(v=''){
@@ -69,11 +71,19 @@ export async function renderAgenda(root){
     <div class="field"><label>Wat wil je in je agenda zetten?</label>
       <textarea id="agendaPrompt" class="textarea" placeholder="Bijv. Morgen om half vier oudergesprek met Lisa, duurt 30 minuten."></textarea>
     </div>
+    <div id="agendaPhotoPreview" class="hidden agenda-photo-preview"></div>
     <div class="row">
       <button id="makeAgenda" class="btn">Maak agenda-item</button>
       <button id="recordAgenda" class="btn secondary">🎙️ Inspreken</button>
+      <label class="btn secondary">📷 Foto maken van afspraak
+        <input id="agendaCameraInput" type="file" accept="image/*" capture="environment" hidden>
+      </label>
+      <label class="btn secondary">🖼️ Foto invoegen
+        <input id="agendaPhotoInput" type="file" accept="image/*" hidden>
+      </label>
       <span id="agendaRecordState"></span>
     </div>
+    <div id="agendaPhotoState" class="muted" style="margin-top:8px"></div>
     <div id="agendaTranscript" class="muted" style="margin-top:10px"></div>
   </div>
 
@@ -116,6 +126,8 @@ export async function renderAgenda(root){
   </div>`;
 
   const prompt=root.querySelector('#agendaPrompt'),result=root.querySelector('#agendaResult');
+  const agendaCameraInput=root.querySelector('#agendaCameraInput'),agendaPhotoInput=root.querySelector('#agendaPhotoInput');
+  const agendaPhotoPreview=root.querySelector('#agendaPhotoPreview'),agendaPhotoState=root.querySelector('#agendaPhotoState');
   const summaryEl=root.querySelector('#agendaSummary');
   const approved=root.querySelector('#agendaApproved');
   const confirmActions=root.querySelector('#agendaConfirmActions');
@@ -124,6 +136,38 @@ export async function renderAgenda(root){
   const pendingPrompt=settings.get('pendingAgendaPrompt','');
   if(pendingPrompt){prompt.value=pendingPrompt;settings.remove('pendingAgendaPrompt');setTimeout(()=>make(),100);}
 
+
+  function clearAgendaPhoto(){
+    agendaPhoto=null;
+    if(agendaPhotoUrl){try{URL.revokeObjectURL(agendaPhotoUrl)}catch{}agendaPhotoUrl=''}
+    agendaCameraInput.value='';agendaPhotoInput.value='';
+    agendaPhotoPreview.classList.add('hidden');agendaPhotoPreview.innerHTML='';
+    agendaPhotoState.textContent='';
+  }
+
+  async function useAgendaPhoto(file){
+    if(!file)return;
+    clearAgendaPhoto();
+    agendaPhoto=file;
+    agendaPhotoUrl=URL.createObjectURL(file);
+    agendaPhotoPreview.classList.remove('hidden');
+    agendaPhotoPreview.innerHTML=`<div class="chat-image-wrap"><img src="${agendaPhotoUrl}" alt="Foto van afspraak"><button id="removeAgendaPhoto" class="btn danger small">Foto verwijderen</button></div>`;
+    agendaPhotoPreview.querySelector('#removeAgendaPhoto').onclick=clearAgendaPhoto;
+    agendaPhotoState.textContent='Afspraak uit foto lezen…';
+    try{
+      const read=await generalChatWithImage([],file,
+        'Lees deze foto als een mogelijke afspraak, uitnodiging, brief, kaart of agenda-informatie. Haal ALLEEN gegevens eruit die relevant zijn om een agenda-afspraak te maken: titel/onderwerp, datum, begintijd, eindtijd of duur, locatie en relevante notitie. Neem exacte tekst, namen, datum en tijden zorgvuldig over. Geef een korte Nederlandse beschrijving in natuurlijke taal die daarna door een agenda-parser kan worden verwerkt. Verzin niets dat niet zichtbaar is.');
+      prompt.value=read.text||'';
+      agendaPhotoState.textContent='Foto gelezen. Controleer eventueel de tekst; AI maakt nu de afspraak.';
+      await make();
+    }catch(e){
+      agendaPhotoState.textContent='';
+      toast(e.message);
+    }
+  }
+
+  agendaCameraInput.onchange=()=>useAgendaPhoto(agendaCameraInput.files?.[0]||null);
+  agendaPhotoInput.onchange=()=>useAgendaPhoto(agendaPhotoInput.files?.[0]||null);
 
   function formatDateNL(value){
     try{return new Date(`${value}T12:00:00`).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}

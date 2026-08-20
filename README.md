@@ -297,3 +297,15 @@ Ondersteunt onder andere MP3, M4A, WAV, AAC, OGG en WebM. Audio wordt lokaal in 
 - Leuke momenten, activiteiten en wat de klas heeft geleerd krijgen nadruk.
 - Individuele gevoelige of negatieve leerlinginformatie wordt niet in het algemene ouderverslag opgenomen.
 - Het verslag eindigt met een korte positieve afronding of vooruitblik.
+
+## Versie 43 – foto-invoer voor AI-Agenda en AI-Mail
+- AI-Agenda heeft twee aparte knoppen: `Foto maken van afspraak` en `Foto invoegen`.
+- Een foto van een uitnodiging, briefje, kaart of afspraak wordt door AI gelezen en daarna automatisch omgezet naar het bestaande agenda-item met titel, datum, tijd, locatie en notities.
+- De normale AI-Agenda-flow blijft behouden: controleren, aanpassen, goedkeuren, ICS To Calendar en mailen als `.ics`.
+- AI-Mail heeft twee aparte foto-opties: `Foto maken` en `Foto invoegen`.
+- Nieuw onderdeel `Reageren op een bestaande mail`.
+- Na het toevoegen van een foto/screenshot van een mail kun je typen wat je in de reactie wilt hebben.
+- Je kunt die aanvullende instructie ook inspreken via `Inspreken wat ik wil`.
+- `Geef een reactie op deze mail` leest de ontvangen mail op de foto en maakt vervolgens een direct bruikbare reactie waarin je eigen aanvullende wensen zijn verwerkt.
+- Leerlingnamen in de gemaakte mail blijven gecontroleerd worden tegen de klassenlijst.
+- Alle bestaande functies uit v42 blijven behouden.
